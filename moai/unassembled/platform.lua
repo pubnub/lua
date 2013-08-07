@@ -4,7 +4,8 @@ function pubnub.new( init )
 
     local self          = pubnub.base(init)
 
-	function self:performWithDelay ( delay, func, ... )
+
+    function self:performWithDelay ( delay, func, ... )
 		local t = MOAITimer.new()
 		t:setSpan ( delay )
 		t:setListener ( MOAITimer.EVENT_TIMER_END_SPAN, function ()
@@ -16,34 +17,43 @@ function pubnub.new( init )
 	end
 
     function self:_request ( args )
-    
+
+    	local task = MOAIHttpTask.new ()
+
+    	function done(err)
+    		task:setCallback(function() end)
+    		task:setTimeout(1)
+    	end
+
         -- APPEND PUBNUB CLOUD ORIGIN 
-        table.insert ( args.request, 1, self.origin )
+        table.insert ( args.url, 1, self.origin )
 
-        local url = table.concat ( args.request, "/" )
+        local url = table.concat ( args.url, "/" )
 		
-		print ( url )
+		--print (url)
+		task:setUrl(url)
+		task:setHeader 			( "V", "VERSION" )
+		task:setTimeout     	(args.timeout)
+		task:setHeader 			( "User-Agent", "PLATFORM" )
+		task:setFollowRedirects 	(true)
+		task:setFailOnError		(false)
 
-		local task = MOAIHttpTask.new ()
-		task:setHeader 		( "V", "VERSION" )
-		task:setHeader 		( "User-Agent", "PLATFORM" )
-		task:setUrl 		( url )
-		task:setCallback	( function ( response )	
-		
-			if response.code then -- this appears to return no code if no error, need to check more
+		task:setCallback	( function ( response )
+			if task:getResponseCode() ~= 200 then 
 				return args.callback ( nil )
 			end
-			status, message = pcall ( MOAIJsonParser.decode, response:getString () )
-			
+			status, message = pcall ( MOAIJsonParser.decode, response:getString() )
+
 			if status then
-                return args.callback ( message )
+            	return args.callback ( message )
             else
                 return args.callback ( nil )
             end
 			
 		end )
 		
-		task:performAsync ()
+		task:performAsync()
+		return done
     end
 
     -- RETURN NEW PUBNUB OBJECT

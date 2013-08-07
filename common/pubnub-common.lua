@@ -12,11 +12,81 @@
 require "Json"
 require "crypto"
 require "BinDecHex"
+
+function table.val_to_str ( v )
+  if "string" == type( v ) then
+    v = string.gsub( v, "\n", "\\n" )
+    if string.match( string.gsub(v,"[^'\"]",""), '^"+$' ) then
+      return "'" .. v .. "'"
+    end
+    return '"' .. string.gsub(v,'"', '\\"' ) .. '"'
+  else
+    return "table" == type( v ) and table.tostring( v ) or
+      tostring( v )
+  end
+end
+
+function table.key_to_str ( k )
+  if "string" == type( k ) and string.match( k, "^[_%a][_%a%d]*$" ) then
+    return k
+  else
+    return "[" .. table.val_to_str( k ) .. "]"
+  end
+end
+
+function table.tostring( tbl )
+  local result, done = {}, {}
+  for k, v in ipairs( tbl ) do
+    table.insert( result, table.val_to_str( v ) )
+    done[ k ] = true
+  end
+  for k, v in pairs( tbl ) do
+    if not done[ k ] then
+      table.insert( result,
+        table.key_to_str( k ) .. "=" .. table.val_to_str( v ) )
+    end
+  end
+  return "{" .. table.concat( result, "," ) .. "}"
+end
+
+function string:split(sSeparator, nMax, bRegexp)
+    assert(sSeparator ~= '')
+    assert(nMax == nil or nMax >= 1)
+
+    local aRecord = {}
+
+    if self:len() > 0 then
+        local bPlain = not bRegexp
+        nMax = nMax or -1
+
+        local nField=1 nStart=1
+        local nFirst,nLast = self:find(sSeparator, nStart, bPlain)
+        while nFirst and nMax ~= 0 do
+            aRecord[nField] = self:sub(nStart, nFirst-1)
+            nField = nField+1
+            nStart = nLast+1
+            nFirst,nLast = self:find(sSeparator, nStart, bPlain)
+            nMax = nMax-1
+        end
+        aRecord[nField] = self:sub(nStart)
+    end
+
+    return aRecord
+end
+
+
 pubnub      = {}
 
 function pubnub.base(init)
     local self          = init
-    local subscriptions = {}
+    local CHANNELS      = {}
+    local SUB_CALLBACK  = nil
+    local SUB_RESTORE   = false
+    local SUB_RECEIVER  = nil
+    local PRESENCE_SUFFIX = '-pnpres'
+    local SUB_WINDOWING = 1
+    local SUB_TIMEOUT   = 310
+    local TIMETOKEN     = 0
 
     -- SSL ENABLED?
     if self.ssl then 
@@ -24,6 +94,12 @@ function pubnub.base(init)
     else
         self.origin = "http://" .. self.origin
     end
+    local function each(table,func)
+        for k,v in next, table do
+            func(v)
+        end
+    end
+
 
     function self:publish(args)
         local callback = args.callback or function() end
@@ -55,7 +131,7 @@ function pubnub.base(init)
                 end
                 callback(response)
             end,
-            request  = {
+            url  = {
                 "publish",
                 self.publish_key,
                 self.subscribe_key,
@@ -67,80 +143,163 @@ function pubnub.base(init)
         })
     end
 
+
+    local function generate_channel_list(channels)
+        local list = {}
+        each(channels, function(channel)
+            if channel.subscribed then
+                table.insert(list, channel.name)
+            end
+        end)
+        return list
+    end
+
+    local function each_channel(callback) 
+        local count = 0
+        if not callback then return end
+        each( generate_channel_list(CHANNELS), function(channel) 
+            local chan = CHANNELS[channel]
+
+            if not chan then return end
+
+            count = count + 1
+            callback(chan)
+            end
+        )
+
+        return count
+    end
+
     function self:subscribe(args)
-        local channel   = args.channel
-        local callback  = callback or args.callback
-        local errorback = args['errorback'] or function() end
-        local connectcb = args['connect'] or function() end
-        local timetoken = 0
+        local channel       = args.channel
+        local callback      = callback              or args.callback
+        local errcb         = args['error']         or function() end
+        local connect       = args['connect']       or function() end
+        local reconnect     = args['reconnect']     or function() end
+        local disconnect    = args['disconnect']    or function() end
+        local noheresync    = args['noheresync']    or false
+        local presence      = args['presence']      or false
+        local backfill      = args['backfill']      or false
+        local timetoken     = args['timetoken']     or 0
+        local timeout       = args['timeout']       or SUB_TIMEOUT
+        local windowing     = args['windowing']     or SUB_WINDOWING
+        local restore       = args['restore']       or false
 
         if not channel then return print("Missing Channel") end
         if not callback then return print("Missing Callback") end
+        if not self.subscribe_key then return print("Missing Subscribe Key") end
 
-        -- NEW CHANNEL?
-        if not subscriptions[channel] then
-            subscriptions[channel] = {}
+        SUB_RESTORE = restore
+        TIMETOKEN   = timetoken
+
+        each(string.split(channel, ','), function(ch)
+
+            local settings = CHANNELS[ch] or {}
+            SUB_CALLBACK = callback
+            SUB_CHANNEL = ch
+            CHANNELS[SUB_CHANNEL] = {
+                name            = ch ,
+                connected       = settings.connected or false ,
+                disconnected    = settings.disconnected or false ,
+                subscribed      = true ,
+                callback        = SUB_CALLBACK,
+                connect         = connect,
+                disconnect      = disconnect,
+                reconnect       = reconnect
+            }
+            if not presence then return end
+
+            self:subscribe({
+                channel = ch .. PRESENCE_SUFFIX,
+                callback = presence
+            })
+
+            if settings.subscribed then return end
+
+        end)
+
+        local function _invoke_callback(msg, channel)
+            CHANNELS[channel]['callback'](msg, channel)
         end
 
-        -- ENSURE SINGLE CONNECTION
-        if (subscriptions[channel].connected) then
-            return print("Already Connected")
+        local function _reset_offline(err) 
+            if SUB_RECEIVER then SUB_RECEIVER(err) end
+            SUB_RECEIVER = nil;
         end
 
-        subscriptions[channel].connected = 1
-        subscriptions[channel].first     = nil
+
 
         -- SUBSCRIPTION RECURSION 
-        local function substabizel()
-            -- STOP CONNECTION?
-            if not subscriptions[channel].connected then return end
+        local function _connect()
+
+            local channels = table.concat(generate_channel_list(CHANNELS), ",")
+
+            if not channels then return end
+
+            _reset_offline()
 
             -- CONNECT TO PUBNUB SUBSCRIBE SERVERS
-            self:_request({
-                callback = function(response)
-                    -- STOP CONNECTION?
-                    if not subscriptions[channel].connected then return end
-
-                    -- CONNECTED CALLBACK
-                    if not subscriptions[channel].first then
-                        subscriptions[channel].first = true
-                        connectcb()
-                    end
-
-                    -- PROBLEM?
-                    if not response then
-                        -- ENSURE CONNECTED
-                        return self:time({
-                            callback = function(time)
-                                if not time then
-                                    timer.performWithDelay( 1000, substabizel )
-                                    return errorback("Lost Network Connection")
-                                end
-                                timer.performWithDelay( 10, substabizel )
-                            end
-                        })
-                    end
-
-                    timetoken = response[2]
-                    timer.performWithDelay( 1, substabizel )
-
-                    for i, message in ipairs(response[1]) do
-                        callback(message)
-                    end
-                end,
-                request = {
+            SUB_RECEIVER = self:_request({
+                timeout = timeout,
+                url = {
                     "subscribe",
                     self.subscribe_key,
-                    self:_encode(channel),
+                    self:_encode(channels),
                     "0",
-                    timetoken
+                    tostring(TIMETOKEN)
                 },
-                query = { uuid = self.uuid }
-            })
-        end
+                query = { uuid = self.uuid },
+                callback = function(messages)
+                    SUB_RECEIVER = nil
 
-        -- BEGIN SUBSCRIPTION (LISTEN FOR MESSAGES)
-        substabizel()
+                    -- Check for errors
+                    if not messages then 
+                        errcb()
+                        return self:performWithDelay(windowing, _connect)
+                    end
+
+                    -- Restore previous Connection point if needed
+                    TIMETOKEN = messages[2]
+
+                    -- connect
+
+                    each_channel(function(channel) 
+                        if channel.connected then return end;
+                        channel.connected = 1;
+                        channel.connect(channel.name);
+                    end);
+
+                    -- invoke memory catchup and invoke upto 
+                    -- 100 previous messages from the Queue
+
+                    if backfill then
+                        TIMETOKEN = 10000
+                        backfill = 0
+                    end
+
+
+                    -- invoke callback on channels
+                    if not messages[3] then
+                            for k,v in next, messages[1] do
+                                _invoke_callback(v, SUB_CHANNEL)
+                            end
+                    else
+                        for k,v in next, string.split(messages[3], ',') do 
+                            _invoke_callback(messages[1][k], string.split(v,"-pnpres")[1])
+                        end
+                    end
+
+                    -- do recursive connect
+                    self:performWithDelay(windowing, _connect)
+                end
+            })
+
+        end
+        local function CONNECT()
+            _reset_offline()
+            self:performWithDelay(windowing, _connect);
+        end
+        CONNECT()
         
     end
 
@@ -154,8 +313,8 @@ function pubnub.base(init)
     end
 
     function self:presence(args)
-	args.channel = args.channel .. '-pnpres'
-	self:subscribe(args)
+    	args.channel = args.channel .. '-pnpres'
+    	self:subscribe(args)
     end
 
     function self:here_now(args)
@@ -168,7 +327,7 @@ function pubnub.base(init)
 
         self:_request({
             callback = callback,
-            request  = {
+            url  = {
                 'v2',
                 'presence',
                 'sub-key', self.subscribe_key,
@@ -179,29 +338,6 @@ function pubnub.base(init)
     end    
 
     function self:history(args)
-        if not (args.callback and args.channel) then
-            return print("Missing History Callback and/or Channel")
-        end
-
-        local limit    = args.limit
-        local channel  = args.channel
-        local callback = args.callback
-
-        if not limit then limit = 10 end
-
-        self:_request({
-            callback = callback,
-            request  = {
-                'history',
-                self.subscribe_key,
-                self:_encode(channel),
-                '0',
-                limit
-            }
-        })
-    end
-
-    function self:detailedHistory(args)
         if not (args.callback and args.channel) then
             return print("Missing History Callback and/or Channel")
         end
@@ -240,7 +376,7 @@ function pubnub.base(init)
 
         self:_request({
             callback = callback,
-            request  = {
+            url  = {
                 'v2',
                 'history',
                 'sub-key',
@@ -258,7 +394,7 @@ function pubnub.base(init)
         end
 
         self:_request({
-            request  = { "time", "0" },
+            url  = { "time", "0" },
             callback = function(response)
                 if response then
                     return args.callback(response[1])
