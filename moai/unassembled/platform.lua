@@ -30,7 +30,7 @@ function pubnub.new( init )
 
         local url = table.concat ( args.url, "/" )
 		
-		--print (url)
+        --print(url)
 		task:setUrl(url)
 		task:setHeader 			( "V", "VERSION" )
 		task:setTimeout     	(args.timeout)
@@ -39,6 +39,7 @@ function pubnub.new( init )
 		task:setFailOnError		(false)
 
 		task:setCallback	( function ( response )
+			--print(response:getString())
 			if task:getResponseCode() ~= 200 then 
 				return args.callback ( nil )
 			end

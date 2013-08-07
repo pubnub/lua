@@ -297,7 +297,7 @@ function pubnub.base(init)
         end
         local function CONNECT()
             _reset_offline()
-            self:performWithDelay(windowing, _connect);
+            _connect()
         end
         CONNECT()
         
@@ -305,11 +305,13 @@ function pubnub.base(init)
 
     function self:unsubscribe(args)
         local channel = args.channel
-        if not subscriptions[channel] then return nil end
+        print(channel)
+        if not CHANNELS[channel] then return nil end
 
         -- DISCONNECT
-        subscriptions[channel].connected = nil
-        subscriptions[channel].first     = nil
+        CHANNELS[channel].connected = nil
+        CHANNELS[channel].subscribed = nil
+
     end
 
     function self:presence(args)
