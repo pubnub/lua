@@ -1,42 +1,46 @@
 
 function pubnub.new(init)
     local self          = pubnub.base(init)
-    local subscriptions = {}
+
+    function self:set_timeout(delay, func)
+        timer.performWithDelay( delay * 1000, func)
+    end
 
     function self:_request(args)
-        -- APPEND PUBNUB CLOUD ORIGIN 
-        table.insert( args.request, 1, self.origin )
+        local request_id = nil
+        local params = {}
 
-        local url = table.concat( args.request, "/" )
+        local http_status_lookup = {}
+        http_status_lookup[200] = true
 
-        urlParams = ""
-        urlSep = "?"
 
-        if args.query and # args.query then
-            for k,v in pairs(args.query) do
-                urlParams = urlParams .. urlSep .. k .. "=" .. v
-                urlSep = "&"
-            end
-            url = url .. urlParams
+        local function abort()
+            if request_id then network.cancel(request_id) end
         end
 
-        local params = {}
         params["V"] = "VERSION"
         params["User-Agent"] = "PLATFORM"
+        params.timeout = args.timeout
 
-        network.request( url, "GET", function(event)
+        print(args.url)
+
+        request_id = network.request( args.url, "GET", function(event)
+            --print(table.tostring(event))
             if (event.isError) then
-                return args.callback(nil)
+                return args.fail(nil)
             end
 
+            --print(event.response)
             status, message = pcall( Json.Decode, event.response )
 
-            if status then
+            if status and http_status_lookup[event.status] then
                 return args.callback(message)
-            else
-                return args.callback(nil)
+            else 
+                return args.fail(message)
             end
         end, params)
+
+        return abort
     end
 
     -- RETURN NEW PUBNUB OBJECT
