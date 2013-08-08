@@ -61,8 +61,8 @@ function connect()
         callback = function(message)
             textout(message.msgtext)
         end,
-        errorback = function()
-            textout("Oh no!!! Dropped 3G Conection!")
+        error = function(message)
+            textout(message or "Connection Error")
         end
     })
 end

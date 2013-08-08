@@ -29,19 +29,10 @@ function here_now(channel)
         channel = channel,
         limit = limit,
         callback = function(response)
-            if response then
-                for k, v in pairs(response) 
-                    do 
-                    if (type (v) == 'string')
-                    then textout(v)
-                    elseif (type (v) == 'table') 
-                    then
-                        for i,line in ipairs(v) do
-                            textout(line)
-                        end
-                    end
-                end
-            end
+            textout(response)
+        end,
+        error = function (response)
+            textout(response)
         end
     })
 end

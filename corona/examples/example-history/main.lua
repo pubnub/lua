@@ -26,28 +26,16 @@ display.setStatusBar( display.HiddenStatusBar )
 -- 
 -- CALL HISTORY FUNCTION
 --
-function detailedHistory(channel, count, reverse)
-    pubnub_obj:detailedHistory({
+function history(channel, count, reverse)
+    pubnub_obj:history({
         channel = channel,
         count = count,
         reverse = reverse,
         callback = function(response)
-
-            if response then
-                for k, v in pairs(response[1])
-                    do 
-                    print( type (v) )
-                    if (type (v) == 'string')
-                    then print(v)
-                    elseif (type (v) == 'table') 
-                    then
-                        for i,line in ipairs(v) do
-                            print(line)
-                        end
-                    end
-                end
-            end
-            
+            textout(response)
+        end,
+        error = function (response)
+            textout(response)
         end
     })
 end
@@ -56,4 +44,4 @@ end
 -- MAIN TEST
 -- 
 local my_channel = 'hello_world'
-detailedHistory( my_channel, 5, false )
+history( my_channel, 5, false )

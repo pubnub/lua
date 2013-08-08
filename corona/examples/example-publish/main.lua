@@ -30,10 +30,9 @@ function publish(channel, text)
     pubnub_obj:publish({
         channel = channel,
         message = text,
-        callback = function(response)
-            textout( response[1] )
-            textout( response[2] )
-            textout( response[3] )
+        callback = function(r) --textout(r) 
+        end,
+        error = function(r) textout(r) 
         end
     })
 end
@@ -41,19 +40,19 @@ end
 -- 
 -- MAIN TEST
 -- 
-local my_channel = 'hello-corona-demo-channel'
+local my_channel = 'lua-dsm'
 
 --
 -- Publish String
 --
-publish(my_channel, 'Hello World!' )
+publish("abcd", 'Hello World!' )
 
 --
 -- Publish Dictionary Object
 --
-publish(my_channel, { Name = 'John', Age = '25' })
+publish("efgh", { Name = 'John', Age = '25' })
 
 --
 -- Publish Array
 --
-publish(my_channel, { 'Sunday', 'Monday', 'Tuesday' })
+publish("ijkl", { 'Sunday', 'Monday', 'Tuesday' })

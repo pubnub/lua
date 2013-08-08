@@ -13,8 +13,7 @@ pubnub_obj = pubnub.new({
     publish_key   = "demo",
     subscribe_key = "demo",
     secret_key    = nil,
-    ssl           = nil,
-    origin        = "pubsub.pubnub.com"
+    ssl           = nil
 })
 
 -- 
@@ -31,7 +30,7 @@ display.setStatusBar( display.HiddenStatusBar )
 -- 
 -- FUNCTIONS USED FOR TEST
 -- 
-function subscribe( channel, donecb )
+function subscribe( channel )
     pubnub_obj:subscribe({
         channel = channel,
         connect = function()
@@ -40,10 +39,12 @@ function subscribe( channel, donecb )
         end,
         callback = function(message)
             textout(message)
-            timer.performWithDelay( 500, donecb )
         end,
-        errorback = function()
+        error = function()
             textout("Oh no!!! Dropped 3G Conection!")
+        end,
+        presence = function(message)
+            textout(message)
         end
     })
 end
@@ -51,5 +52,9 @@ end
 -- 
 -- MAIN TEST
 -- 
-local my_channel = 'hello_world'
-subscribe(my_channel, function() end)
+
+subscribe("lua-1,lua-2")
+subscribe("lua-3")
+subscribe("lua-4")
+subscribe("lua-5,lua-6, lua-7,lua-8")
+
