@@ -143,9 +143,17 @@ function pubnub.base(init)
         return url
     end
 
+    function self:set_auth_key(key)
+        self.auth_key = key
+    end
+
+    function self:get_auth_key(key)
+        return self.auth_key
+    end
 
     function self:publish(args)
         local callback = args.callback or function() end
+        local error_cb    = args.error or function() end
 
         if not (args.channel and args.message) then
             return callback({ nil, "Missing Channel and/or Message" })
@@ -170,10 +178,11 @@ function pubnub.base(init)
         self:_request({
             callback = function(response)
                 if not response then
-                    return callback({ nil, "Connection Lost" })
+                    return error_cb({ nil, "Connection Lost" })
                 end
                 callback(response)
             end,
+            fail = function(response) error_cb(response) end ,
             url  = build_url({
                 "publish",
                 self.publish_key,
@@ -182,7 +191,7 @@ function pubnub.base(init)
                 _encode(channel),
                 "0",
                 _encode(message)
-            })
+            }, { auth = self.auth_key })
         })
     end
 
@@ -217,7 +226,7 @@ function pubnub.base(init)
     function self:subscribe(args)
         local channel       = args.channel
         local callback      = callback              or args.callback
-        local errcb         = args['error']         or function() end
+        local error_cb         = args['error']         or function() end
         local connect       = args['connect']       or function() end
         local reconnect     = args['reconnect']     or function() end
         local disconnect    = args['disconnect']    or function() end
@@ -355,7 +364,7 @@ function pubnub.base(init)
 
                     -- Check for errors
                     if not messages then 
-                        errcb()
+                        error_cb()
                         return self:set_timeout(windowing, _connect)
                     end
 
@@ -427,15 +436,17 @@ function pubnub.base(init)
 
         local channel  = args.channel
         local callback = args.callback
+        local error_cb = args.error or function() end
 
         self:_request({
             callback = callback,
+            fail = error_cb,
             url  = build_url({
                 'v2',
                 'presence',
                 'sub-key', self.subscribe_key,
                 'channel', _encode(channel)
-            })
+            }, { auth = self.auth_key })
         })
 
     end    
@@ -468,6 +479,7 @@ function pubnub.base(init)
 
         local channel  = args.channel
         local callback = args.callback
+        local error_cb = args.error or function() end
         local count = args.count
 
         if not count then
@@ -477,8 +489,11 @@ function pubnub.base(init)
 
         query["count"] = count
 
+        query.auth = self.auth_key
+
         self:_request({
             callback = callback,
+            fail     = error_cb,
             url  = build_url({
                 'v2',
                 'history',
