@@ -5,7 +5,7 @@ function pubnub.new( init )
     local self          = pubnub.base(init)
 
 
-    function self:performWithDelay ( delay, func, ... )
+    function self:set_timeout ( delay, func, ... )
 		local t = MOAITimer.new()
 		t:setSpan ( delay )
 		t:setListener ( MOAITimer.EVENT_TIMER_END_SPAN, function ()
@@ -25,15 +25,12 @@ function pubnub.new( init )
     		task:setTimeout(1)
     	end
 
-        -- APPEND PUBNUB CLOUD ORIGIN 
-        table.insert ( args.url, 1, self.origin )
-
-        local url = table.concat ( args.url, "/" )
-		
-        --print(url)
-		task:setUrl(url)
+        print(args.url)
+		task:setUrl(args.url)
 		task:setHeader 			( "V", "VERSION" )
-		task:setTimeout     	(args.timeout)
+		if args.timeout then
+			task:setTimeout     	(args.timeout)
+		end
 		task:setHeader 			( "User-Agent", "PLATFORM" )
 		task:setFollowRedirects 	(true)
 		task:setFailOnError		(false)
@@ -41,7 +38,7 @@ function pubnub.new( init )
 		task:setCallback	( function ( response )
 			--print(response:getString())
 			if task:getResponseCode() ~= 200 then 
-				return args.callback ( nil )
+				return args.fail()
 			end
 			status, message = pcall ( MOAIJsonParser.decode, response:getString() )
 

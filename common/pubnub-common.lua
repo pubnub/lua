@@ -87,17 +87,92 @@ function pubnub.base(init)
     local SUB_WINDOWING = 1
     local SUB_TIMEOUT   = 310
     local TIMETOKEN     = 0
+    local SECOND        = 1
+    local methods       = {} 
 
-    -- SSL ENABLED?
-    if self.ssl then 
-        self.origin = "https://" .. self.origin
-    else
-        self.origin = "http://" .. self.origin
+    if not self.origin then
+        self.origin = "pubsub.pubnub.com"
     end
+
+    local origin = self.origin
+
+    function change_origin()
+        origin = string.gsub(self.origin, "pubsub", "ps-" .. math.random(1000))
+    end
+
     local function each(table,func)
         for k,v in next, table do
             func(v)
         end
+    end
+
+    local function _encode(str)
+        str = string.gsub( str, "([^%w])", function(c)
+            return string.format( "%%%02X", string.byte(c) )
+        end )
+        return str
+    end
+
+    local function _map( func, array )
+        local new_array = {}
+        for i,v in ipairs(array) do
+            new_array[i] = func(v)
+        end
+        return new_array
+    end
+
+     local Hex2Dec, BMOr, BMAnd, Dec2Hex
+     if(BinDecHex)then
+        Hex2Dec, BMOr, BMAnd, Dec2Hex = BinDecHex.Hex2Dec, BinDecHex.BMOr, BinDecHex.BMAnd, BinDecHex.Dec2Hex
+     end
+
+     local function UUID()
+        local chars = {"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
+        local uuid = {[9]="-",[14]="-",[15]="4",[19]="-",[24]="-"}
+        local r, index
+        for i = 1,36 do
+                if(uuid[i]==nil)then
+                        -- r = 0 | Math.random()*16;
+                        r = math.random (36)
+                        if(i == 20 and BinDecHex)then 
+                                -- (r & 0x3) | 0x8
+                                index = tonumber(Hex2Dec(BMOr(BMAnd(Dec2Hex(r), Dec2Hex(3)), Dec2Hex(8))))
+                                if(index < 1 or index > 36)then 
+                                        print("WARNING Index-19:",index)
+                                        return UUID() -- should never happen - just try again if it does ;-)
+                                end
+                        else
+                                index = r
+                        end
+                        uuid[i] = chars[index]
+                end
+        end
+        return table.concat(uuid)
+     end
+
+    local function build_url(url_components, url_params)
+
+        table.insert ( url_components, 1, origin )
+        local url = table.concat(url_components,'/')
+        
+        if self.ssl then
+            url = "https://" .. url
+        else
+            url = "http://" .. url
+        end
+
+        local params = {}
+        if not url_params then return url end
+
+        for k,v in next,url_params do
+            if v then
+                table.insert(params, k .. "=" .. v)
+            end
+        end
+
+        url = url .. "?" .. table.concat(params, '&')
+
+        return url
     end
 
 
@@ -131,18 +206,17 @@ function pubnub.base(init)
                 end
                 callback(response)
             end,
-            url  = {
+            url  = build_url({
                 "publish",
                 self.publish_key,
                 self.subscribe_key,
                 signature,
-                self:_encode(channel),
+                _encode(channel),
                 "0",
-                self:_encode(message)
-            }
+                _encode(message)
+            })
         })
     end
-
 
     local function generate_channel_list(channels)
         local list = {}
@@ -169,6 +243,8 @@ function pubnub.base(init)
 
         return count
     end
+
+
 
     function self:subscribe(args)
         local channel       = args.channel
@@ -217,6 +293,37 @@ function pubnub.base(init)
             if settings.subscribed then return end
 
         end)
+                    -- Test Network Connection
+
+        local function _test_connection(success) 
+            if success then
+                -- Begin Next Socket Connection
+                self:set_timeout( SECOND, function() methods:CONNECT() end );
+            
+            else 
+                change_origin()
+
+                -- Re-test Connection
+                self:set_timeout( SECOND, function() 
+                    self:time(_test_connection);
+                end);
+            end
+
+            -- Disconnect & Reconnect
+            each_channel(function(channel)
+                -- Reconnect
+                if success and channel.disconnected then
+                    channel.disconnected = 0;
+                    return channel.reconnect(channel.name)
+                end
+
+                -- Disconnect
+                if not success and not channel.disconnected then
+                    channel.disconnected = 1
+                    channel.disconnect(channel.name)
+                end 
+            end)
+        end
 
         local function _invoke_callback(msg, channel)
             CHANNELS[channel]['callback'](msg, channel)
@@ -241,21 +348,26 @@ function pubnub.base(init)
             -- CONNECT TO PUBNUB SUBSCRIBE SERVERS
             SUB_RECEIVER = self:_request({
                 timeout = timeout,
-                url = {
+                url = build_url({
                     "subscribe",
                     self.subscribe_key,
-                    self:_encode(channels),
+                    _encode(channels),
                     "0",
                     tostring(TIMETOKEN)
-                },
-                query = { uuid = self.uuid },
+                    }, 
+                    { uuid = self.uuid, 
+                    auth = self.auth_key }),
+                fail = function()
+                    SUB_RECEIVER = nil
+                    self:time(_test_connection)
+                end,
                 callback = function(messages)
                     SUB_RECEIVER = nil
 
                     -- Check for errors
                     if not messages then 
                         errcb()
-                        return self:performWithDelay(windowing, _connect)
+                        return self:set_timeout(windowing, _connect)
                     end
 
                     -- Restore previous Connection point if needed
@@ -290,16 +402,16 @@ function pubnub.base(init)
                     end
 
                     -- do recursive connect
-                    self:performWithDelay(windowing, _connect)
+                    self:set_timeout(windowing, _connect)
                 end
             })
 
         end
-        local function CONNECT()
+        function methods:CONNECT()
             _reset_offline()
             _connect()
         end
-        CONNECT()
+        methods:CONNECT()
         
     end
 
@@ -329,12 +441,12 @@ function pubnub.base(init)
 
         self:_request({
             callback = callback,
-            url  = {
+            url  = build_url({
                 'v2',
                 'presence',
                 'sub-key', self.subscribe_key,
-                'channel', self:_encode(channel)
-            }
+                'channel', _encode(channel)
+            })
         })
 
     end    
@@ -378,79 +490,39 @@ function pubnub.base(init)
 
         self:_request({
             callback = callback,
-            url  = {
+            url  = build_url({
                 'v2',
                 'history',
                 'sub-key',
                 self.subscribe_key,
                 'channel',
-                self:_encode(channel)
-            },
-            query = query
+                _encode(channel)
+            }, query );
         })
     end
 
-    function self:time(args)
-        if not args.callback then
+    function self:time(callback)
+        if not callback then
             return print("Missing Time Callback")
         end
 
         self:_request({
-            url  = { "time", "0" },
+            url  = build_url({ "time", "0" }),
             callback = function(response)
                 if response then
-                    return args.callback(response[1])
+                    return callback(response[1])
                 end
-                args.callback(nil)
+                    callback(nil)
+            end,
+            fail = function(response)
+                callback(nil)
             end
         })
     end
 
-    function self:_encode(str)
-        str = string.gsub( str, "([^%w])", function(c)
-            return string.format( "%%%02X", string.byte(c) )
-        end )
-        return str
-    end
 
-    function self:_map( func, array )
-        local new_array = {}
-        for i,v in ipairs(array) do
-            new_array[i] = func(v)
-        end
-        return new_array
-    end
 
-     local Hex2Dec, BMOr, BMAnd, Dec2Hex
-     if(BinDecHex)then
-        Hex2Dec, BMOr, BMAnd, Dec2Hex = BinDecHex.Hex2Dec, BinDecHex.BMOr, BinDecHex.BMAnd, BinDecHex.Dec2Hex
-     end
-
-     function self:UUID()
-        local chars = {"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
-        local uuid = {[9]="-",[14]="-",[15]="4",[19]="-",[24]="-"}
-        local r, index
-        for i = 1,36 do
-                if(uuid[i]==nil)then
-                        -- r = 0 | Math.random()*16;
-                        r = math.random (36)
-                        if(i == 20 and BinDecHex)then 
-                                -- (r & 0x3) | 0x8
-                                index = tonumber(Hex2Dec(BMOr(BMAnd(Dec2Hex(r), Dec2Hex(3)), Dec2Hex(8))))
-                                if(index < 1 or index > 36)then 
-                                        print("WARNING Index-19:",index)
-                                        return UUID() -- should never happen - just try again if it does ;-)
-                                end
-                        else
-                                index = r
-                        end
-                        uuid[i] = chars[index]
-                end
-        end
-        return table.concat(uuid)
-     end
-
-    self.uuid = self:UUID()
+    self.uuid = UUID()
     
     -- RETURN NEW PUBNUB OBJECT
     return self
