@@ -22,15 +22,11 @@ function pubnub.new(init)
         params["User-Agent"] = "PLATFORM"
         params.timeout = args.timeout
 
-        print(args.url)
-
         request_id = network.request( args.url, "GET", function(event)
-            --print(table.tostring(event))
             if (event.isError) then
                 return args.fail(nil)
             end
 
-            --print(event.response)
             status, message = pcall( Json.Decode, event.response )
 
             if status and http_status_lookup[event.status] then

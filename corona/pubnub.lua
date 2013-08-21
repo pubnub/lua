@@ -321,7 +321,6 @@ function pubnub.base(init)
         end
 
         local function start_poll_online()
-            print(stop_keepalive)
             if stop_keepalive then
                 stop_keepalive = false
                 _poll_online()
@@ -415,7 +414,6 @@ function pubnub.base(init)
 
     function self:unsubscribe(args)
         local channel = args.channel
-        print(channel)
         if not CHANNELS[channel] then return nil end
 
         -- DISCONNECT
@@ -556,15 +554,11 @@ function pubnub.new(init)
         params["User-Agent"] = "Corona"
         params.timeout = args.timeout
 
-        print(args.url)
-
         request_id = network.request( args.url, "GET", function(event)
-            --print(table.tostring(event))
             if (event.isError) then
                 return args.fail(nil)
             end
 
-            --print(event.response)
             status, message = pcall( Json.Decode, event.response )
 
             if status and http_status_lookup[event.status] then

@@ -320,7 +320,6 @@ function pubnub.base(init)
         end
 
         local function start_poll_online()
-            print(stop_keepalive)
             if stop_keepalive then
                 stop_keepalive = false
                 _poll_online()
@@ -414,7 +413,6 @@ function pubnub.base(init)
 
     function self:unsubscribe(args)
         local channel = args.channel
-        print(channel)
         if not CHANNELS[channel] then return nil end
 
         -- DISCONNECT
