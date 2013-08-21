@@ -137,8 +137,11 @@ function pubnub.base(init)
                 table.insert(params, k .. "=" .. v)
             end
         end
+        local query = table.concat(params, '&')
 
-        url = url .. "?" .. table.concat(params, '&')
+        if (query and string.len(query) > 0) then 
+            url = url .. "?" .. query
+        end
 
         return url
     end
@@ -221,7 +224,9 @@ function pubnub.base(init)
         return count
     end
 
-
+    function self:get_current_channels()
+        return generate_channel_list(CHANNELS)
+    end
 
     function self:subscribe(args)
         local channel       = args.channel
@@ -415,16 +420,12 @@ function pubnub.base(init)
     function self:unsubscribe(args)
         local channel = args.channel
         if not CHANNELS[channel] then return nil end
-
         -- DISCONNECT
         CHANNELS[channel].connected = nil
         CHANNELS[channel].subscribed = nil
 
-    end
+        self:unsubscribe({channel = channel .. PRESENCE_SUFFIX})
 
-    function self:presence(args)
-    	args.channel = args.channel .. '-pnpres'
-    	self:subscribe(args)
     end
 
     function self:here_now(args)
