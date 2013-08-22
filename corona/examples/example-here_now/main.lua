@@ -1,5 +1,5 @@
 --
--- PubNub 3.1 : Here Now Example
+-- PubNub : Here Now Example
 --
 require "pubnub"
 require "PubnubUtil"

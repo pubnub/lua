@@ -1,5 +1,5 @@
 --
--- PubNub 3.1 : UUID Example
+-- PubNub : UUID Example
 --
 require "pubnub"
 require "crypto"

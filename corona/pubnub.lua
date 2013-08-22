@@ -308,7 +308,7 @@ function pubnub.base(init)
         end
 
         local function _invoke_callback(msg, channel)
-            CHANNELS[channel]['callback'](msg, channel)
+            CHANNELS[channel]['callback'](msg, string.split(channel,"-pnpres")[1])
         end
 
         local function _reset_offline(err) 
@@ -339,7 +339,7 @@ function pubnub.base(init)
 
             local channels = table.concat(generate_channel_list(CHANNELS), ",")
 
-            if not channels then
+            if not channels or string.len(channels) == 0 then
                 stop_keepalive = true
                 return 
             end
@@ -399,7 +399,7 @@ function pubnub.base(init)
                             end
                     else
                         for k,v in next, string.split(messages[3], ',') do 
-                            _invoke_callback(messages[1][k], string.split(v,"-pnpres")[1])
+                            _invoke_callback(messages[1][k], v)
                         end
                     end
 

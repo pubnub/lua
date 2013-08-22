@@ -1,5 +1,5 @@
 --
--- PubNub 3.1 : Publish Example
+-- PubNub : Publish Example
 --
 
 require "pubnub"

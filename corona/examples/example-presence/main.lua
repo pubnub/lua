@@ -1,5 +1,5 @@
 --
--- PubNub 3.1 : Presence Example
+-- PubNub : Presence Example
 --
 require "PubnubUtil"
 require "pubnub"

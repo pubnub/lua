@@ -1,5 +1,5 @@
 --
--- PubNub 3.3 : History Example
+-- PubNub : History Example
 --
 
 require "pubnub"

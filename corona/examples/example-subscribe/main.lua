@@ -1,5 +1,5 @@
 --
--- PubNub 3.1 : Subscribe Example
+-- PubNub : Subscribe Example
 --
 
 require "pubnub"
