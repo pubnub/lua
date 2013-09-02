@@ -1,8 +1,8 @@
 -- www.pubnub.com - PubNub realtime push service in the cloud.
--- https://github.com/pubnub/pubnub-api/tree/master/lua lua-Corona Push API
+-- https://github.com/pubnub/lua lua-Corona Push API
 
 -- PubNub Real Time Push APIs and Notifications Framework
--- Copyright (c) 2010 Stephen Blum
+-- Copyright (c) 2013 Stephen Blum
 -- http://www.pubnub.com/
 
 -- -----------------------------------
@@ -151,6 +151,23 @@ function pubnub.base(init)
 
     function self:get_auth_key(key)
         return self.auth_key
+    end
+
+    function self:leave(channel)
+        if not (channel) then
+            return print("Missing Channel")
+        end
+    
+        self:_request({
+            callback = function() end,
+            fail = function() end,
+            url  = build_url({
+                'v2',
+                'presence',
+                'sub_key', self.subscribe_key,
+                'channel', _encode(channel), 'leave'
+            }, { uuid = self.uuid, auth = self.auth_key })
+        })
     end
 
     function self:publish(args)
@@ -424,6 +441,7 @@ function pubnub.base(init)
         CHANNELS[channel].subscribed = nil
 
         self:unsubscribe({channel = channel .. PRESENCE_SUFFIX})
+        self:leave(channel)
 
     end
 
