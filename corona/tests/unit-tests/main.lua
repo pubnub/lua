@@ -17,17 +17,17 @@ local pubnub_obj = pubnub.new({
 
 local channel = "corona-lua-test-" .. math.random() .. "-"
 
-local total = 25
+local total = 1 + 2 + 2 + 20 + 2
 local pass = 0
 local fail = 0
 
-local function test(condition,description)
+local function test(condition, name, description)
     if (condition) then
         pass = pass + 1
-        print('PASS : ' .. description)
+        print('PASS : ' .. name .. " : " ..description)
     else
         fail = fail + 1
-        print('FAIL : ' .. description)
+        print('FAIL : ' .. name .. " : " ..description)
     end
 end
 
@@ -44,7 +44,7 @@ local tests = {
                 channel = channel .. "1",
                 message = msg,
                 callback = function(r)
-                    test(r[1] == 1, name .. " : " .. "Message should get published")
+                    test(r[1] == 1, name, "Message should get published")
                 end,
                 error = function(e)
                 end
@@ -61,14 +61,14 @@ local tests = {
             pubnub_obj:subscribe({
                 channel = ch,
                 callback = function(r)
-                    test(r == msg, name .. " : " .."Message published should be received")
+                    test(r == msg, name, "Message published should be received")
                 end,
                 connect = function(c)
                     pubnub_obj:publish({
                         channel = ch,
                         message = msg,
                         callback = function(r)
-                            test(r[1] == 1, name .. " : " .. "Message should get published")
+                            test(r[1] == 1, name, "Message should get published")
                         end,
                         error = function(e)
                         end
@@ -91,7 +91,7 @@ local tests = {
                     test((r[1] == msg[1] and 
                         r[2] == msg[2] and
                         r[3] == msg[3] ), 
-                        name .. " : " .."Message published should be received")
+                        name, "Message published should be received")
                         pubnub_obj:unsubscribe({channel = ch})
                 end,
                 connect = function(c)
@@ -99,7 +99,7 @@ local tests = {
                         channel = ch,
                         message = msg,
                         callback = function(r)
-                            test(r[1] == 1, name .. " : " .. "Message should get published")
+                            test(r[1] == 1, name, "Message should get published")
                         end,
                         error = function(e)
                         end
@@ -123,10 +123,10 @@ local tests = {
                 callback = function(r)end,
                 presence = function(p)
                     if (count == 0) then
-                        test(p.occupancy == 1, name .. " : " .. "Test Occupancy 1")
+                        test(p.occupancy == 1, name, "Test Occupancy 1")
                         count = count + 1
                     else 
-                        test(p.occupancy == 2, name .. " : " .. "Test Occupancy 2")
+                        test(p.occupancy == 2, name, "Test Occupancy 2")
                         pubnub_obj:unsubscribe({channel = ch})
                         pubnub_obj_2:unsubscribe({channel = ch})
                     end
@@ -162,13 +162,13 @@ local tests = {
                 channel = ch,
                 message = msg,
                 callback = function(r)
-                    test(r[1] == 1, name .. " : " .. "Message should get published")
+                    test(r[1] == 1, name, "Message should get published")
                     pubnub_obj:history({
                         channel = ch,
                         count = 1,
                         callback = function(r)
-                            test(r[1][1] == msg, name .. " : " .. "Message published should be available in history")
-                            test(r[1][2] == nil, name .. " : " .. "History Message count")
+                            test(r[1][1] == msg, name, "Message published should be available in history")
+                            test(r[1][2] == nil, name, "History Message count")
                         end
                     })
                 end,
@@ -189,27 +189,27 @@ local tests = {
                 channel = ch,
                 message = msg1,
                 callback = function(r)
-                    test(r[1] == 1, name .. " : " .. "Message should get published")
+                    test(r[1] == 1, name, "Message should get published")
                     pubnub_obj:publish({
                         channel = ch,
                         message = msg2,
                         callback = function(r)
-                            test(r[1] == 1, name .. " : " .. "Message should get published")
+                            test(r[1] == 1, name, "Message should get published")
                             timer.performWithDelay(5000, function()
                                 pubnub_obj:history({
                                     channel = ch,
                                     count = 1,
                                     callback = function(r)
-                                        test(r[1][1] == msg2, name .. " : " .. "Message published should be available in history 1")
-                                        test(r[1][2] == nil, name .. " : " .. "History Message count")
+                                        test(r[1][1] == msg2, name, "Message published should be available in history 1")
+                                        test(r[1][2] == nil, name, "History Message count")
                                     end
                                 })
                                 pubnub_obj:history({
                                     channel = ch,
                                     callback = function(r)
-                                        test(r[1][1] == msg1, name .. " : " .. "Message published should be available in history 2")
-                                        test(r[1][2] == msg2, name .. " : " .. "Message published should be available in history 3")
-                                        test(r[1][3] == nil, name .. " : " .. "Message Count 2")
+                                        test(r[1][1] == msg1, name, "Message published should be available in history 2")
+                                        test(r[1][2] == msg2, name, "Message published should be available in history 3")
+                                        test(r[1][3] == nil, name, "Message Count 2")
                                     end
                                 })
                             end)
@@ -236,29 +236,29 @@ local tests = {
                 channel = ch,
                 message = msg1,
                 callback = function(r)
-                    test(r[1] == 1, name .. " : " .. "Message should get published")
+                    test(r[1] == 1, name, "Message should get published")
                     pubnub_obj:publish({
                         channel = ch,
                         message = msg2,
                         callback = function(r)
-                            test(r[1] == 1, name .. " : " .. "Message should get published")
+                            test(r[1] == 1, name, "Message should get published")
                             timer.performWithDelay(5000, function()
                                 pubnub_obj:history({
                                     channel = ch,
                                     count = 1,
                                     reverse = true,
                                     callback = function(r)
-                                        test(r[1][1] == msg1, name .. " : " .. "Message published should be available in history 1")
-                                        test(r[1][2] == nil, name .. " : " .. "History Message count")
+                                        test(r[1][1] == msg1, name, "Message published should be available in history 1")
+                                        test(r[1][2] == nil, name, "History Message count")
                                     end
                                 })
                                 pubnub_obj:history({
                                     channel = ch,
                                     reverse = true,
                                     callback = function(r)
-                                        test(r[1][1] == msg1, name .. " : " .. "Message published should be available in history 2")
-                                        test(r[1][2] == msg2, name .. " : " .. "Message published should be available in history 3")
-                                        test(r[1][3] == nil, name .. " : " .. "Message Count 2")
+                                        test(r[1][1] == msg1, name, "Message published should be available in history 2")
+                                        test(r[1][2] == msg2, name, "Message published should be available in history 3")
+                                        test(r[1][3] == nil, name, "Message Count 2")
                                     end
                                 })
                             end)
@@ -301,13 +301,48 @@ local tests = {
                                     pubnub_obj:here_now({
                                         channel = ch,
                                         callback = function(r)
-                                            test(r.occupancy == 2, name .. " : " .. "Here Now occupancy test")
+                                            test(r.occupancy == 2, name, "Here Now occupancy test")
                                         end
                                     })
                                 end)
                             end,
                             callback = function() end
                             
+                        })
+                    end)
+                end
+
+            })
+        end
+    },
+    {
+        
+        func = 
+        function()
+            local name = "Unsubscribe should decrease occupancy Test"
+            local ch = channel .. "9"
+            local msg = {1,2,3}
+            local count = 0
+            local pubnub_obj_2
+            pubnub_obj:subscribe({
+                channel = ch,
+                callback = function(r) end,
+                connect = function(c)
+                    timer.performWithDelay(3000, function()
+                        pubnub_obj:here_now({
+                            channel = ch,
+                            callback = function(r)
+                                test(r.occupancy == 1, name, "Subcribe should increase occupancy by one")
+                                pubnub_obj:unsubscribe({channel = ch})
+                                timer.performWithDelay(15000, function()
+                                    pubnub_obj:here_now({
+                                        channel = ch,
+                                        callback = function(r)
+                                            test(r.occupancy == 0, name, "Unsubcribe should decrease occupancy by one")
+                                        end
+                                    })
+                                end)
+                            end,
                         })
                     end)
                 end
