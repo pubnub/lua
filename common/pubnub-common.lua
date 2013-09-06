@@ -442,7 +442,7 @@ function pubnub.base(init)
 
         self:unsubscribe({channel = channel .. PRESENCE_SUFFIX})
         self:leave(channel)
-
+        methods:CONNECT()
     end
 
     function self:here_now(args)

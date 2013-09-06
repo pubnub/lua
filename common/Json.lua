@@ -359,10 +359,7 @@ function JsonReader:ReadString()
     local fromunicode = function(m)
         return string.char(tonumber(m, 16))
     end
-    return string.gsub(
-        result, 
-        "u%x%x(%x%x)", 
-        fromunicode)
+    return result
 end
 
 function JsonReader:ReadComment()

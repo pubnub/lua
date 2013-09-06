@@ -38,14 +38,13 @@ function subscribe( channel )
             textout(channel)
         end,
         callback = function(message)
+            --print(message.data.message)
             textout(message)
         end,
         error = function()
             textout("Oh no!!! Dropped 3G Conection!")
         end,
-        presence = function(message)
-            textout(message)
-        end
+
     })
 end
 
@@ -53,8 +52,5 @@ end
 -- MAIN TEST
 -- 
 
-subscribe("lua-1,lua-2")
-subscribe("lua-3")
-subscribe("lua-4")
-subscribe("lua-5,lua-6, lua-7,lua-8")
+subscribe("lua-1")
 
