@@ -19,7 +19,6 @@ $(PUBNUB_LUA): $(PUBNUB_COMMON_LUA) $(PUBNUB_NODE_LUA)
 	find examples -d -name "example-*" -exec cp ../common/PubnubUtil.lua {} \;
 	cp ../common/PubnubUtil.lua tests/unit-tests/
 	cp ../common/BinDecHex.lua tests/unit-tests/
-	cp ../common/Json.lua tests/unit-tests/
 	cp pubnub.lua tests/unit-tests/
 	find . -name '*.lua-e' | xargs rm 
 

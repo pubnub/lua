@@ -1,4 +1,4 @@
--- Version: 3.4.0
+-- Version: 3.4.1
 -- www.pubnub.com - PubNub realtime push service in the cloud.
 -- https://github.com/pubnub/lua lua-Corona Push API
 
@@ -7,7 +7,7 @@
 -- http://www.pubnub.com/
 
 -- -----------------------------------
--- PubNub 3.4.0 Real-time Push Cloud API
+-- PubNub 3.4.1 Real-time Push Cloud API
 -- -----------------------------------
 
 require "crypto"
@@ -293,7 +293,8 @@ function pubnub.base(init)
         end)
                     -- Test Network Connection
 
-        local function _test_connection(success) 
+        local function _test_connection(success)
+
             if success then
                 -- Begin Next Socket Connection
                 self:set_timeout( SECOND, function() methods:CONNECT() end );
@@ -583,9 +584,8 @@ function pubnub.new( init )
     		task:setTimeout(1)
     	end
 
-        print(args.url)
 		task:setUrl(args.url)
-		task:setHeader 			( "V", "3.4.0" )
+		task:setHeader 			( "V", "3.4.1" )
 		if args.timeout then
 			task:setTimeout     	(args.timeout)
 		end
@@ -594,13 +594,14 @@ function pubnub.new( init )
 		task:setFailOnError		(false)
 
 		task:setCallback	( function ( response )
-			--print(response:getString())
+
 			if task:getResponseCode() ~= 200 then 
 				return args.fail()
 			end
-			status, message = pcall ( self:json_decode, response:getString() )
 
-			if status then
+			message = self:json_decode(response:getString())
+
+			if message then
             	return args.callback ( message )
             else
                 return args.callback ( nil )
