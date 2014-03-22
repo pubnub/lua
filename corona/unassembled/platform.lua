@@ -1,9 +1,18 @@
+local json = require "json"
 
 function pubnub.new(init)
     local self          = pubnub.base(init)
 
     function self:set_timeout(delay, func)
         timer.performWithDelay( delay * 1000, func)
+    end
+
+    function self:json_encode(msg)
+        return json.encode(msg)
+    end
+
+    function self:json_decode(msg)
+        return json.decode(msg)
     end
 
     function self:_request(args)
@@ -27,9 +36,9 @@ function pubnub.new(init)
                 return args.fail(nil)
             end
 
-            status, message = pcall( Json.Decode, event.response )
+            message = self:json_decode(event.response)
 
-            if status and http_status_lookup[event.status] then
+            if message and http_status_lookup[event.status] then
                 return args.callback(message)
             else 
                 return args.fail(message)

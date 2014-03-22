@@ -10,7 +10,6 @@
 -- PubNub 3.4.0 Real-time Push Cloud API
 -- -----------------------------------
 
-require "Json"
 require "crypto"
 require "BinDecHex"
 
@@ -180,7 +179,7 @@ function pubnub.base(init)
         end
 
         local channel   = args.channel
-        local message   = Json.Encode(args.message)
+        local message   = self:json_encode(args.message)
         local signature = "0"
 
         -- SIGN PUBLISHED MESSAGE?
@@ -294,7 +293,8 @@ function pubnub.base(init)
         end)
                     -- Test Network Connection
 
-        local function _test_connection(success) 
+        local function _test_connection(success)
+
             if success then
                 -- Begin Next Socket Connection
                 self:set_timeout( SECOND, function() methods:CONNECT() end );
@@ -549,12 +549,21 @@ function pubnub.base(init)
     return self
 
 end
+local json = require "json"
 
 function pubnub.new(init)
     local self          = pubnub.base(init)
 
     function self:set_timeout(delay, func)
         timer.performWithDelay( delay * 1000, func)
+    end
+
+    function self:json_encode(msg)
+        return json.encode(msg)
+    end
+
+    function self:json_decode(msg)
+        return json.decode(msg)
     end
 
     function self:_request(args)
@@ -578,9 +587,9 @@ function pubnub.new(init)
                 return args.fail(nil)
             end
 
-            status, message = pcall( Json.Decode, event.response )
+            message = self:json_decode(event.response)
 
-            if status and http_status_lookup[event.status] then
+            if message and http_status_lookup[event.status] then
                 return args.callback(message)
             else 
                 return args.fail(message)

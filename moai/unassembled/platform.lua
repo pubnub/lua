@@ -16,6 +16,14 @@ function pubnub.new( init )
 		t:start ()
 	end
 
+	function self:json_encode(msg)
+		return MOAIJsonParser.encode(msg)
+	end
+
+	function self:json_decode(msg)
+		return MOAIJsonParser.decode(msg)
+	end
+
     function self:_request ( args )
 
     	local task = MOAIHttpTask.new ()
@@ -25,7 +33,6 @@ function pubnub.new( init )
     		task:setTimeout(1)
     	end
 
-        print(args.url)
 		task:setUrl(args.url)
 		task:setHeader 			( "V", "VERSION" )
 		if args.timeout then
@@ -36,13 +43,14 @@ function pubnub.new( init )
 		task:setFailOnError		(false)
 
 		task:setCallback	( function ( response )
-			--print(response:getString())
+
 			if task:getResponseCode() ~= 200 then 
 				return args.fail()
 			end
-			status, message = pcall ( MOAIJsonParser.decode, response:getString() )
 
-			if status then
+			message = self:json_decode(response:getString())
+
+			if message then
             	return args.callback ( message )
             else
                 return args.callback ( nil )

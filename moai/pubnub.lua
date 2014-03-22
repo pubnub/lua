@@ -10,7 +10,6 @@
 -- PubNub 3.4.0 Real-time Push Cloud API
 -- -----------------------------------
 
-require "Json"
 require "crypto"
 require "BinDecHex"
 
@@ -180,7 +179,7 @@ function pubnub.base(init)
         end
 
         local channel   = args.channel
-        local message   = Json.Encode(args.message)
+        local message   = self:json_encode(args.message)
         local signature = "0"
 
         -- SIGN PUBLISHED MESSAGE?
@@ -567,6 +566,14 @@ function pubnub.new( init )
 		t:start ()
 	end
 
+	function self:json_encode(msg)
+		return MOAIJsonParser.encode(msg)
+	end
+
+	function self:json_decode(msg)
+		return MOAIJsonParser.decode(msg)
+	end
+
     function self:_request ( args )
 
     	local task = MOAIHttpTask.new ()
@@ -591,7 +598,7 @@ function pubnub.new( init )
 			if task:getResponseCode() ~= 200 then 
 				return args.fail()
 			end
-			status, message = pcall ( MOAIJsonParser.decode, response:getString() )
+			status, message = pcall ( self:json_decode, response:getString() )
 
 			if status then
             	return args.callback ( message )

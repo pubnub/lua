@@ -9,7 +9,6 @@
 -- PubNub VERSION Real-time Push Cloud API
 -- -----------------------------------
 
-require "Json"
 require "crypto"
 require "BinDecHex"
 
@@ -179,7 +178,7 @@ function pubnub.base(init)
         end
 
         local channel   = args.channel
-        local message   = Json.Encode(args.message)
+        local message   = self:json_encode(args.message)
         local signature = "0"
 
         -- SIGN PUBLISHED MESSAGE?
@@ -293,7 +292,8 @@ function pubnub.base(init)
         end)
                     -- Test Network Connection
 
-        local function _test_connection(success) 
+        local function _test_connection(success)
+
             if success then
                 -- Begin Next Socket Connection
                 self:set_timeout( SECOND, function() methods:CONNECT() end );
