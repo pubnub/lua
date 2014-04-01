@@ -540,6 +540,10 @@ function pubnub.base(init)
         })
     end
 
+    function self:set_uuid(uuid)
+        self.uuid = uuid
+        if methods.CONNECT then methods:CONNECT() end
+    end
 
 
     self.uuid = UUID()

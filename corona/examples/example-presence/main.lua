@@ -33,7 +33,7 @@ display.setStatusBar( display.HiddenStatusBar )
 -- FUNCTIONS USED FOR TEST
 -- 
 function presence( channel, donecb )
-    pubnub_obj:presence({
+    pubnub_obj:subscribe({
         channel = channel,
         connect = function()
             textout('Connected to channel ')
@@ -42,6 +42,9 @@ function presence( channel, donecb )
         callback = function(message)
             for i,v in pairs(message) do textout(i .. " " .. v) end
             timer.performWithDelay( 500, donecb )
+        end,
+        presence = function(message)
+            for i,v in pairs(message) do textout(i .. " " .. v) end
         end,
         errorback = function()
             textout("Oh no!!! Dropped 3G Conection!")
@@ -53,4 +56,5 @@ end
 -- MAIN TEST
 -- 
 local my_channel = 'hello_world'
+pubnub_obj:set_uuid('my-test-uuid')
 presence(my_channel, function() end)
