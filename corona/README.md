@@ -118,12 +118,10 @@ detailedHistory( my_channel, 5, false )
 
 ### Time
 ```lua
-multiplayer:time({
-    callback = function(time)
-        -- PRINT TIME
-        print("PUBNUB SERVER TIME: " .. time)
-    end
-})
+multiplayer:time(function(time)
+    -- PRINT TIME
+    print("PUBNUB SERVER TIME: " .. time)
+end)
 ```
 
 ### UUID
