@@ -86,12 +86,10 @@ detailedHistory( my_channel, 5, false )
 
 ### Time
 ```lua
-pubnub_obj:time({
-    callback = function(time)
-        -- PRINT TIME
-        print("PUBNUB SERVER TIME: " .. time)
-    end
-})
+pubnub_obj:time(function(time)
+    -- PRINT TIME
+    print("PUBNUB SERVER TIME: " .. time)
+end)
 ```
 
 ### UUID
