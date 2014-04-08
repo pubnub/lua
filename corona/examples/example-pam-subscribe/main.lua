@@ -29,11 +29,11 @@ local inputFontSize = 18
 local inputFontHeight = 30
 tHeight = 30
 
-channelField = native.newTextField( 50, 25, 200, tHeight )
+channelField = native.newTextField( 150, 25, 200, tHeight )
 channelField.font = native.newFont( native.systemFontBold, inputFontSize )
 channelField.placeholder = "channel"
 
-authKeyField = native.newTextField( 50, 75, 200, tHeight )
+authKeyField = native.newTextField( 150, 75, 200, tHeight )
 authKeyField.font = native.newFont( native.systemFontBold, inputFontSize )
 authKeyField.placeholder = "auth_key"
 
