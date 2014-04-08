@@ -1,4 +1,4 @@
---
+    --
 -- INIT CHAT:
 -- This initializes the pubnub networking layer.
 --
@@ -6,11 +6,15 @@ require "pubnub"
 require "PubnubUtil"
 local widget = require( "widget" )
 
-local events_display = display.newText( "Events Display", 0, 0, "AmericanTypewriter-Bold", 18 )
-events_display.x, events_display.y = display.contentCenterX, 200
+local events_display = display.newText( "", 0, 0, "AmericanTypewriter-Bold", 18 )
+events_display.x, events_display.y = display.contentCenterX, 150
 
-local messages_display = display.newText( "Messages Display", 0, 0, "AmericanTypewriter-Bold", 18 )
+local errors_display = display.newText( "", 0, 0, "AmericanTypewriter-Bold", 18 )
+errors_display.x, errors_display.y = display.contentCenterX, 200
+
+local messages_display = display.newText( "", 0, 0, "AmericanTypewriter-Bold", 18 )
 messages_display.x, messages_display.y = display.contentCenterX, 250
+
 
 
 
@@ -25,11 +29,11 @@ local inputFontSize = 18
 local inputFontHeight = 30
 tHeight = 30
 
-channelField = native.newTextField( 50, 50, 200, tHeight )
+channelField = native.newTextField( 50, 25, 200, tHeight )
 channelField.font = native.newFont( native.systemFontBold, inputFontSize )
 channelField.placeholder = "channel"
 
-authKeyField = native.newTextField( 50, 100, 200, tHeight )
+authKeyField = native.newTextField( 50, 75, 200, tHeight )
 authKeyField.font = native.newFont( native.systemFontBold, inputFontSize )
 authKeyField.placeholder = "auth_key"
 
@@ -54,19 +58,24 @@ function connect()
     pubnub:subscribe({
         channel  = channelField.text ,
         connect  = function(channel)
+            errors_display.text = ""
             events_display.text = 'Connected to ' .. ( channel or channelField.text )
         end,
         disconnect  = function(channel)
+            errors_display.text = ""
             events_display.text = 'Disconnected from ' .. ( channel or channelField.text )
         end,
         reconnect  = function(channel)
+            errors_display.text = ""
             events_display.text = 'Reconnected to ' .. ( channel or channelField.text )
         end,
         callback = function(message)
+            errors_display.text = ""
             messages_display.text = message
         end,
         error = function(message)
-            events_display.text = "Connection Error on " .. ( channel or channelField.text )
+            errors_display.text = ""
+            errors_display.text =  "Error : " .. message.message .. " " .. table.tostring(message.payload)
         end
     })
 end

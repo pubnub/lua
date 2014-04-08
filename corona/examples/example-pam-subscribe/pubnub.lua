@@ -12,42 +12,6 @@
 
 require "crypto"
 require "BinDecHex"
-function table.val_to_str ( v )
-  if "string" == type( v ) then
-    v = string.gsub( v, "\n", "\\n" )
-    if string.match( string.gsub(v,"[^'\"]",""), '^"+$' ) then
-      return "'" .. v .. "'"
-    end
-    return '"' .. string.gsub(v,'"', '\\"' ) .. '"'
-  else
-    return "table" == type( v ) and table.tostring( v ) or
-      tostring( v )
-  end
-end
-
-function table.key_to_str ( k )
-  if "string" == type( k ) and string.match( k, "^[_%a][_%a%d]*$" ) then
-    return k
-  else
-    return "[" .. table.val_to_str( k ) .. "]"
-  end
-end
-
-function table.tostring( tbl )
-  local result, done = {}, {}
-  for k, v in ipairs( tbl ) do
-    table.insert( result, table.val_to_str( v ) )
-    done[ k ] = true
-  end
-  for k, v in pairs( tbl ) do
-    if not done[ k ] then
-      table.insert( result,
-        table.key_to_str( k ) .. "=" .. table.val_to_str( v ) )
-    end
-  end
-  return "{" .. table.concat( result, "," ) .. "}"
-end
-
 
 
 function string:split(sSeparator, nMax, bRegexp)
@@ -98,6 +62,30 @@ function pubnub.base(init)
     end
 
     local origin = self.origin
+
+    function _invoke_callback(response, callback, err) 
+        if type(response) == "table" then
+            if response.error and response.message and response.payload then
+                err({message=response.message, payload=response.payload})
+                return
+            end
+            if response.payload then
+                callback(response.payload);
+                return
+            end
+        end
+        callback(response)
+    end
+
+    function _invoke_error(response,err) 
+        if type(response) == "table" and response.error and
+            response.message and response.payload then
+            err({message=response.message, payload=response.payload })
+        else 
+            err(response)
+        end
+    end
+
 
     function change_origin()
         origin = string.gsub(self.origin, "pubsub", "ps-" .. math.random(1000))
@@ -177,7 +165,7 @@ function pubnub.base(init)
         if (query and string.len(query) > 0) then 
             url = url .. "?" .. query
         end
-        print(url)
+
         return url
     end
 
@@ -347,21 +335,22 @@ function pubnub.base(init)
             -- Disconnect & Reconnect
             each_channel(function(channel)
                 -- Reconnect
-            --    if success and channel.disconnected then
-            --        channel.disconnected = 0;
-            --        return channel.reconnect(channel.name)
-            --    end
+                if success and channel.disconnected then
+                    channel.disconnected = 0;
+                    return channel.reconnect(channel.name)
+                end
 
                 -- Disconnect
                 if not success and not channel.disconnected then
-                    channel.disconnected = true
+                    channel.disconnected = 1
                     channel.disconnect(channel.name)
                 end 
             end)
         end
 
-        local function _invoke_callback(msg, channel)
-            CHANNELS[channel]['callback'](msg, string.split(channel,"-pnpres")[1])
+        local function _callback(msg, channel)
+            _invoke_callback(msg, CHANNELS[channel]['callback'], CHANNELS[channel]['error'])
+            --CHANNELS[channel]['callback'](msg, string.split(channel,"-pnpres")[1])
         end
 
         local function _reset_offline(err) 
@@ -372,9 +361,7 @@ function pubnub.base(init)
 
         local function _poll_online()
             if stop_keepalive then return end
-            print('_poll_online');
             self:time(function(success) 
-                print(success);
                 if not success then  _test_connection() end
                 self:set_timeout( KEEPALIVE, function() _poll_online() end)
             end)
@@ -416,16 +403,7 @@ function pubnub.base(init)
                     auth = self.auth_key }),
                 fail = function(message)
                     SUB_RECEIVER = nil
-                    if not message then
-                        error_cb()
-                    else
-                        each_channel(function(channel)
-                            if not channel.disconnected then
-                                channel.disconnected = true
-                                channel.disconnect(channel.name)
-                            end
-                        end);
-                    end
+                    _invoke_error(message,error_cb)
                     self:time(_test_connection)
                 end,
                 callback = function(messages)
@@ -443,14 +421,9 @@ function pubnub.base(init)
                     -- connect
 
                     each_channel(function(channel) 
-                        if channel.connected and not channel.disconnected then return end;
-                        if channel.disconnected then
-                            channel.reconnect(channel.name);
-                            channel.disconnected = false
-                        else 
-                            channel.connect(channel.name);
-                        end
-                        channel.connected = true
+                        if channel.connected then return end;
+                        channel.connected = 1;
+                        channel.connect(channel.name);
                     end);
 
                     -- invoke memory catchup and invoke upto 
@@ -465,11 +438,11 @@ function pubnub.base(init)
                     -- invoke callback on channels
                     if not messages[3] then
                             for k,v in next, messages[1] do
-                                _invoke_callback(v, SUB_CHANNEL)
+                                _callback(v, SUB_CHANNEL)
                             end
                     else
                         for k,v in next, string.split(messages[3], ',') do 
-                            _invoke_callback(messages[1][k], v)
+                            _callback(messages[1][k], v)
                         end
                     end
 
@@ -510,7 +483,7 @@ function pubnub.base(init)
 
         self:_request({
             callback = callback,
-            fail = error_cb,
+            fail = function(response) _invoke_error(response,error_cb) end,
             url  = build_url({
                 'v2',
                 'presence',
@@ -563,7 +536,7 @@ function pubnub.base(init)
 
         self:_request({
             callback = callback,
-            fail     = error_cb,
+            fail     = function(response) _invoke_error(response,error_cb) end,
             url  = build_url({
                 'v2',
                 'history',
@@ -641,13 +614,10 @@ function pubnub.new(init)
 
         request_id = network.request( args.url, "GET", function(event)
             if (event.isError) then
-                print('ERROR')
                 return args.fail(nil)
             end
 
-            print(event.response)
             message = self:json_decode(event.response)
-            table.foreach(message,print)
 
             if message and http_status_lookup[event.status] then
                 return args.callback(message)
