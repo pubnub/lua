@@ -43,6 +43,11 @@ end
 pubnub      = {}
 
 function pubnub.base(init)
+
+    if not init then init = {} end
+
+    init.pnsdk          = 'PubNub-Lua-Moai/3.4.2'
+
     local self          = init
     local CHANNELS      = {}
     local SUB_CALLBACK  = nil
@@ -129,13 +134,15 @@ function pubnub.base(init)
         end
 
         local params = {}
-        if not url_params then return url end
-
-        for k,v in next,url_params do
-            if v then
-                table.insert(params, k .. "=" .. v)
+        if url_params then 
+            for k,v in next,url_params do
+                if v then
+                    table.insert(params, k .. "=" .. v)
+                end
             end
         end
+
+        table.insert(params, "PNSDK" .. "=" .. self.pnsdk)        
         local query = table.concat(params, '&')
 
         if (query and string.len(query) > 0) then 

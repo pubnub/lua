@@ -1,6 +1,7 @@
 local json = require "json"
 
 function pubnub.new(init)
+    
     local self          = pubnub.base(init)
 
     function self:set_timeout(delay, func)
@@ -30,7 +31,7 @@ function pubnub.new(init)
         params["V"] = "VERSION"
         params["User-Agent"] = "PLATFORM"
         params.timeout = args.timeout
-
+        print(args.url)
         request_id = network.request( args.url, "GET", function(event)
             if (event.isError) then
                 return args.fail(nil)
