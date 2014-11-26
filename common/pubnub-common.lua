@@ -77,11 +77,14 @@ function pubnub.base(init)
         end
     end
 
-    local function _encode(str)
-        str = string.gsub( str, "([^%w])", function(c)
-            return string.format( "%%%02X", string.byte(c) )
-        end )
-        return str
+    function _encode(str)
+      if (str) then
+        str = string.gsub (str, "\n", "\r\n")
+        str = string.gsub (str, "([^%w %-%_%.%~])",
+            function (c) return string.format ("%%%02X", string.byte(c)) end)
+        str = string.gsub (str, " ", "+")
+      end
+      return str    
     end
 
     local function _map( func, array )
@@ -136,12 +139,12 @@ function pubnub.base(init)
         if url_params then 
             for k,v in next,url_params do
                 if v then
-                    table.insert(params, k .. "=" .. v)
+                    table.insert(params, k .. "=" .. _encode(v))
                 end
             end
         end
 
-        table.insert(params, "PNSDK" .. "=" .. self.pnsdk)        
+        table.insert(params, "PNSDK" .. "=" .. _encode(self.pnsdk))        
         local query = table.concat(params, '&')
 
         if (query and string.len(query) > 0) then 
