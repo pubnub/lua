@@ -237,7 +237,7 @@ function pubnub.base(init)
     local function each_channel(callback)
         local count = 0
         if not callback then return end
-        each( generate_channel_list(CHANNELS), function(channel) 
+        each( generate_channel_list(CHANNELS), function(channel)
             local chan = CHANNELS[channel]
 
             if not chan then return end
@@ -308,12 +308,12 @@ function pubnub.base(init)
             if success then
                 -- Begin Next Socket Connection
                 self:set_timeout( SECOND, function() methods:CONNECT() end );
-            
-            else 
+
+            else
                 change_origin()
 
                 -- Re-test Connection
-                self:set_timeout( SECOND, function() 
+                self:set_timeout( SECOND, function()
                     self:time(_test_connection);
                 end);
             end
@@ -330,7 +330,7 @@ function pubnub.base(init)
                 if not success and not channel.disconnected then
                     channel.disconnected = 1
                     channel.disconnect(channel.name)
-                end 
+                end
             end)
         end
 
@@ -338,7 +338,7 @@ function pubnub.base(init)
             CHANNELS[channel]['callback'](msg, string.split(channel,"-pnpres")[1])
         end
 
-        local function _reset_offline(err) 
+        local function _reset_offline(err)
             if SUB_RECEIVER then SUB_RECEIVER(err) end
             SUB_RECEIVER = nil;
         end
@@ -346,7 +346,7 @@ function pubnub.base(init)
 
         local function _poll_online()
             if stop_keepalive then return end
-            self:time(function(success) 
+            self:time(function(success)
                 if not success then  _test_connection() end
                 self:set_timeout( KEEPALIVE, function() _poll_online() end)
             end)
@@ -361,14 +361,14 @@ function pubnub.base(init)
 
 
 
-        -- SUBSCRIPTION RECURSION 
+        -- SUBSCRIPTION RECURSION
         local function _connect()
 
             local channels = table.concat(generate_channel_list(CHANNELS), ",")
 
             if not channels or string.len(channels) == 0 then
                 stop_keepalive = true
-                return 
+                return
             end
 
             _reset_offline()
@@ -383,8 +383,8 @@ function pubnub.base(init)
                     _encode(channels),
                     "0",
                     tostring(TIMETOKEN)
-                    }, 
-                    { uuid = self.uuid, 
+                    },
+                    { uuid = self.uuid,
                     auth = self.auth_key }),
                 fail = function()
                     SUB_RECEIVER = nil
@@ -394,7 +394,7 @@ function pubnub.base(init)
                     SUB_RECEIVER = nil
 
                     -- Check for errors
-                    if not messages then 
+                    if not messages then
                         error_cb()
                         return self:set_timeout(windowing, _connect)
                     end
@@ -404,13 +404,13 @@ function pubnub.base(init)
 
                     -- connect
 
-                    each_channel(function(channel) 
+                    each_channel(function(channel)
                         if channel.connected then return end;
                         channel.connected = 1;
                         channel.connect(channel.name);
                     end);
 
-                    -- invoke memory catchup and invoke upto 
+                    -- invoke memory catchup and invoke upto
                     -- 100 previous messages from the Queue
 
                     if backfill then
@@ -425,7 +425,7 @@ function pubnub.base(init)
                                 _invoke_callback(v, SUB_CHANNEL)
                             end
                     else
-                        for k,v in next, string.split(messages[3], ',') do 
+                        for k,v in next, string.split(messages[3], ',') do
                             _invoke_callback(messages[1][k], v)
                         end
                     end
@@ -441,7 +441,7 @@ function pubnub.base(init)
             _connect()
         end
         methods:CONNECT()
-        
+
     end
 
     function self:unsubscribe(args)
@@ -476,7 +476,7 @@ function pubnub.base(init)
             }, { auth = self.auth_key })
         })
 
-    end  
+    end
 
     function self:here_now(args)
         if not (args.callback) then
@@ -504,7 +504,7 @@ function pubnub.base(init)
             url  = build_url(query, { auth = self.auth_key })
         })
 
-    end    
+    end
 
     function self:history(args)
         if not (args.callback and args.channel) then
@@ -584,7 +584,7 @@ function pubnub.base(init)
     if not self.uuid then
         self.uuid = UUID()
     end
-    
+
     -- RETURN NEW PUBNUB OBJECT
     return self
 

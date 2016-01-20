@@ -1,4 +1,4 @@
--- Version: 3.4.2
+-- Version: 3.4.3
 -- www.pubnub.com - PubNub realtime push service in the cloud.
 -- https://github.com/pubnub/lua lua-Corona Push API
 
@@ -7,7 +7,7 @@
 -- http://www.pubnub.com/
 
 -- -----------------------------------
--- PubNub 3.4.2 Real-time Push Cloud API
+-- PubNub 3.4.3 Real-time Push Cloud API
 -- -----------------------------------
 
 require "crypto"
@@ -46,7 +46,7 @@ function pubnub.base(init)
 
     if not init then init = {} end
 
-    init.pnsdk          = 'PubNub-Lua-Moai/3.4.2'
+    init.pnsdk          = 'PubNub-Lua-Moai/3.4.3'
 
     local self          = init
     local CHANNELS      = {}
@@ -60,7 +60,7 @@ function pubnub.base(init)
     local KEEPALIVE     = 15
     local SECOND        = 1
     local methods       = {}
-    local stop_keepalive = true 
+    local stop_keepalive = true
 
     if not self.origin then
         self.origin = "pubsub.pubnub.com"
@@ -85,7 +85,7 @@ function pubnub.base(init)
             function (c) return string.format ("%%%02X", string.byte(c)) end)
         str = string.gsub (str, " ", "+")
       end
-      return str    
+      return str
     end
 
     local function _map( func, array )
@@ -109,10 +109,10 @@ function pubnub.base(init)
                 if(uuid[i]==nil)then
                         -- r = 0 | Math.random()*16;
                         r = math.random (36)
-                        if(i == 20 and BinDecHex)then 
+                        if(i == 20 and BinDecHex)then
                                 -- (r & 0x3) | 0x8
                                 index = tonumber(Hex2Dec(BMOr(BMAnd(Dec2Hex(r), Dec2Hex(3)), Dec2Hex(8))))
-                                if(index < 1 or index > 36)then 
+                                if(index < 1 or index > 36)then
                                         print("WARNING Index-19:",index)
                                         return UUID() -- should never happen - just try again if it does ;-)
                                 end
@@ -129,7 +129,7 @@ function pubnub.base(init)
 
         table.insert ( url_components, 1, origin )
         local url = table.concat(url_components,'/')
-        
+
         if self.ssl then
             url = "https://" .. url
         else
@@ -137,7 +137,7 @@ function pubnub.base(init)
         end
 
         local params = {}
-        if url_params then 
+        if url_params then
             for k,v in next,url_params do
                 if v then
                     table.insert(params, k .. "=" .. _encode(v))
@@ -145,10 +145,11 @@ function pubnub.base(init)
             end
         end
 
-        table.insert(params, "PNSDK" .. "=" .. _encode(self.pnsdk))        
+        table.insert(params, "PNSDK" .. "=" .. _encode(self.pnsdk))
+        table.insert(params, "uuid" .. "=" .. _encode(self.uuid))
         local query = table.concat(params, '&')
 
-        if (query and string.len(query) > 0) then 
+        if (query and string.len(query) > 0) then
             url = url .. "?" .. query
         end
 
@@ -167,7 +168,7 @@ function pubnub.base(init)
         if not (channel) then
             return print("Missing Channel")
         end
-    
+
         self:_request({
             callback = function() end,
             fail = function() end,
@@ -234,10 +235,10 @@ function pubnub.base(init)
         return list
     end
 
-    local function each_channel(callback) 
+    local function each_channel(callback)
         local count = 0
         if not callback then return end
-        each( generate_channel_list(CHANNELS), function(channel) 
+        each( generate_channel_list(CHANNELS), function(channel)
             local chan = CHANNELS[channel]
 
             if not chan then return end
@@ -308,12 +309,12 @@ function pubnub.base(init)
             if success then
                 -- Begin Next Socket Connection
                 self:set_timeout( SECOND, function() methods:CONNECT() end );
-            
-            else 
+
+            else
                 change_origin()
 
                 -- Re-test Connection
-                self:set_timeout( SECOND, function() 
+                self:set_timeout( SECOND, function()
                     self:time(_test_connection);
                 end);
             end
@@ -330,7 +331,7 @@ function pubnub.base(init)
                 if not success and not channel.disconnected then
                     channel.disconnected = 1
                     channel.disconnect(channel.name)
-                end 
+                end
             end)
         end
 
@@ -338,7 +339,7 @@ function pubnub.base(init)
             CHANNELS[channel]['callback'](msg, string.split(channel,"-pnpres")[1])
         end
 
-        local function _reset_offline(err) 
+        local function _reset_offline(err)
             if SUB_RECEIVER then SUB_RECEIVER(err) end
             SUB_RECEIVER = nil;
         end
@@ -346,7 +347,7 @@ function pubnub.base(init)
 
         local function _poll_online()
             if stop_keepalive then return end
-            self:time(function(success) 
+            self:time(function(success)
                 if not success then  _test_connection() end
                 self:set_timeout( KEEPALIVE, function() _poll_online() end)
             end)
@@ -361,14 +362,14 @@ function pubnub.base(init)
 
 
 
-        -- SUBSCRIPTION RECURSION 
+        -- SUBSCRIPTION RECURSION
         local function _connect()
 
             local channels = table.concat(generate_channel_list(CHANNELS), ",")
 
             if not channels or string.len(channels) == 0 then
                 stop_keepalive = true
-                return 
+                return
             end
 
             _reset_offline()
@@ -383,8 +384,8 @@ function pubnub.base(init)
                     _encode(channels),
                     "0",
                     tostring(TIMETOKEN)
-                    }, 
-                    { uuid = self.uuid, 
+                    },
+                    { uuid = self.uuid,
                     auth = self.auth_key }),
                 fail = function()
                     SUB_RECEIVER = nil
@@ -394,7 +395,7 @@ function pubnub.base(init)
                     SUB_RECEIVER = nil
 
                     -- Check for errors
-                    if not messages then 
+                    if not messages then
                         error_cb()
                         return self:set_timeout(windowing, _connect)
                     end
@@ -404,13 +405,13 @@ function pubnub.base(init)
 
                     -- connect
 
-                    each_channel(function(channel) 
+                    each_channel(function(channel)
                         if channel.connected then return end;
                         channel.connected = 1;
                         channel.connect(channel.name);
                     end);
 
-                    -- invoke memory catchup and invoke upto 
+                    -- invoke memory catchup and invoke upto
                     -- 100 previous messages from the Queue
 
                     if backfill then
@@ -425,7 +426,7 @@ function pubnub.base(init)
                                 _invoke_callback(v, SUB_CHANNEL)
                             end
                     else
-                        for k,v in next, string.split(messages[3], ',') do 
+                        for k,v in next, string.split(messages[3], ',') do
                             _invoke_callback(messages[1][k], v)
                         end
                     end
@@ -441,7 +442,7 @@ function pubnub.base(init)
             _connect()
         end
         methods:CONNECT()
-        
+
     end
 
     function self:unsubscribe(args)
@@ -456,12 +457,12 @@ function pubnub.base(init)
         methods:CONNECT()
     end
 
-    function self:here_now(args)
-        if not (args.callback and args.channel) then
-            return print("Missing Here Now Callback and/or Channel")
+    function self:where_now(args)
+        if not (args.callback) then
+            return print("Missing Where Now Callback")
         end
 
-        local channel  = args.channel
+        local uuid  = args.uuid or self.uuid
         local callback = args.callback
         local error_cb = args.error or function() end
 
@@ -471,12 +472,40 @@ function pubnub.base(init)
             url  = build_url({
                 'v2',
                 'presence',
-                'sub-key', self.subscribe_key,
-                'channel', _encode(channel)
+                'sub_key', self.subscribe_key,
+                'uuid', _encode(uuid)
             }, { auth = self.auth_key })
         })
 
-    end    
+    end
+
+    function self:here_now(args)
+        if not (args.callback) then
+            return print("Missing Here Now Callback")
+        end
+
+        local channel  = args.channel
+        local callback = args.callback
+        local error_cb = args.error or function() end
+
+        query = {
+                'v2',
+                'presence',
+                'sub-key', self.subscribe_key
+            }
+
+        if args.channel then
+            table.insert(query, 'channel')
+            table.insert(query, _encode(channel))
+        end
+
+        self:_request({
+            callback = callback,
+            fail = error_cb,
+            url  = build_url(query, { auth = self.auth_key })
+        })
+
+    end
 
     function self:history(args)
         if not (args.callback and args.channel) then
@@ -553,8 +582,10 @@ function pubnub.base(init)
 
 
 
-    self.uuid = UUID()
-    
+    if not self.uuid then
+        self.uuid = UUID()
+    end
+
     -- RETURN NEW PUBNUB OBJECT
     return self
 
@@ -595,7 +626,7 @@ function pubnub.new( init )
     	end
 
 		task:setUrl(args.url)
-		task:setHeader 			( "V", "3.4.2" )
+		task:setHeader 			( "V", "3.4.3" )
 		if args.timeout then
 			task:setTimeout     	(args.timeout)
 		end
