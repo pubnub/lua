@@ -82,6 +82,16 @@ function pubnub.base(init)
         str = string.gsub (str, "\n", "\r\n")
         str = string.gsub (str, "([^%w %-%_%.%~])",
             function (c) return string.format ("%%%02X", string.byte(c)) end)
+        str = string.gsub (str, " ", "%%20")
+      end
+      return str
+    end
+
+    function _encode_url_param(str)
+      if (str) then
+        str = string.gsub (str, "\n", "\r\n")
+        str = string.gsub (str, "([^%w %-%_%.%~])",
+            function (c) return string.format ("%%%02X", string.byte(c)) end)
         str = string.gsub (str, " ", "+")
       end
       return str
@@ -139,13 +149,13 @@ function pubnub.base(init)
         if url_params then
             for k,v in next,url_params do
                 if v then
-                    table.insert(params, k .. "=" .. _encode(v))
+                    table.insert(params, k .. "=" .. _encode_url_param(v))
                 end
             end
         end
 
-        table.insert(params, "PNSDK" .. "=" .. _encode(self.pnsdk))
-        table.insert(params, "uuid" .. "=" .. _encode(self.uuid))
+        table.insert(params, "PNSDK" .. "=" .. _encode_url_param(self.pnsdk))
+        table.insert(params, "uuid" .. "=" .. _encode_url_param(self.uuid))
         local query = table.concat(params, '&')
 
         if (query and string.len(query) > 0) then

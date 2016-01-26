@@ -5,19 +5,21 @@ require "pubnub"
 require "crypto"
 require "PubnubUtil"
 
+
+
 -- INITIALIZE PUBNUB STATE
 --
 local pubnub_obj = pubnub.new({
-    publish_key   = "demo",
-    subscribe_key = "demo",
-    secret_key    = "demo",
+    publish_key   = "ds",
+    subscribe_key = "ds",
+    secret_key    = "ds",
     ssl           = false,
     origin        = "pubsub.pubnub.com"
 })
 
 local channel = "corona-lua-test-" .. math.random() .. "-"
 
-local total = 1 + 2 + 2 + 20 + 2
+local total = 1 + 2 + 2 + 20 + 2 + 2
 local pass = 0
 local fail = 0
 
@@ -30,7 +32,6 @@ local function test(condition, name, description)
         print('FAIL : ' .. name .. " : " ..description)
     end
 end
-
 
 local tests = {
     
@@ -134,9 +135,9 @@ local tests = {
                 end,
                 connect = function(c)
                     pubnub_obj_2 = pubnub.new({
-                        publish_key   = "demo",
-                        subscribe_key = "demo",
-                        secret_key    = "demo",
+                        publish_key   = "ds",
+                        subscribe_key = "ds",
+                        secret_key    = "ds",
                         ssl           = false,
                         origin        = "pubsub.pubnub.com"
                     })
@@ -163,14 +164,17 @@ local tests = {
                 message = msg,
                 callback = function(r)
                     test(r[1] == 1, name, "Message should get published")
-                    pubnub_obj:history({
-                        channel = ch,
-                        count = 1,
-                        callback = function(r)
-                            test(r[1][1] == msg, name, "Message published should be available in history")
-                            test(r[1][2] == nil, name, "History Message count")
-                        end
-                    })
+                    timer.performWithDelay(5000, function()
+                        pubnub_obj:history({
+                            channel = ch,
+                            count = 1,
+                            callback = function(r)
+                                test(r[1][1] == msg, name, "Message published should be available in history")
+                                test(r[1][2] == nil, name, "History Message count")
+                            end
+                        })
+                    end)
+                     
                 end,
                 error = function(e)
                 end
@@ -287,9 +291,9 @@ local tests = {
                 callback = function(r) end,
                 connect = function(c)
                     pubnub_obj_2 = pubnub.new({
-                        publish_key   = "demo",
-                        subscribe_key = "demo",
-                        secret_key    = "demo",
+                        publish_key   = "ds",
+                        subscribe_key = "ds",
+                        secret_key    = "ds",
                         ssl           = false,
                         origin        = "pubsub.pubnub.com"
                     })
@@ -349,7 +353,94 @@ local tests = {
 
             })
         end
-    }
+    },
+    {
+        
+        func = 
+        function()
+            local name = "Where Now Test"
+            local ch = channel .. "10"
+            local uuid = channel .. "-uuid"
+            local msg = {1,2,3}
+            local count = 0
+            local pubnub_obj_2
+            pubnub_obj:subscribe({
+                channel = ch,
+                callback = function(r) end,
+                connect = function(c)
+                    pubnub_obj_2 = pubnub.new({
+                        publish_key   = "ds",
+                        subscribe_key = "ds",
+                        secret_key    = "ds",
+                        ssl           = false,
+                        uuid          = uuid,
+                        origin        = "pubsub.pubnub.com"
+                    })
+                    timer.performWithDelay(5000, function()
+                        pubnub_obj_2:subscribe({
+                            channel = ch,
+                            connect = function(r)
+                                timer.performWithDelay(5000, function()
+                                    pubnub_obj:where_now({
+                                        uuid = uuid,
+                                        callback = function(r)
+                                            test(table.in_table(r.payload.channels, ch), name, "Where Now test")
+                                        end
+                                    })
+                                end)
+                            end,
+                            callback = function() end
+                            
+                        })
+                    end)
+                end
+
+            })
+        end
+    },
+    {
+        
+        func = 
+        function()
+            local name = "Global Here Now Test"
+            local ch = channel .. "11"
+            local msg = {1,2,3}
+            local count = 0
+            local uuid = ch .. "uuid"
+            local pubnub_obj_2
+            pubnub_obj:subscribe({
+                channel = ch,
+                callback = function(r) end,
+                connect = function(c)
+                    pubnub_obj_2 = pubnub.new({
+                        publish_key   = "ds",
+                        subscribe_key = "ds",
+                        secret_key    = "ds",
+                        uuid          = uuid,
+                        ssl           = false,
+                        origin        = "pubsub.pubnub.com"
+                    })
+                    timer.performWithDelay(5000, function()
+                        pubnub_obj_2:subscribe({
+                            channel = ch,
+                            connect = function(r)
+                                timer.performWithDelay(5000, function()
+                                    pubnub_obj:here_now({
+                                        callback = function(r)
+                                            test(table.in_table(r.payload.channels[ch].uuids, uuid), name, "Global here Now test")
+                                        end
+                                    })
+                                end)
+                            end,
+                            callback = function() end
+                            
+                        })
+                    end)
+                end
+
+            })
+        end
+    },
 
 }
 
@@ -361,7 +452,7 @@ local function run_tests(test_table)
 end
 
 local timeout = 60
-local i = 5
+local i = 10
 
 local function check_status()
     if ( pass + fail < total and i <= timeout) then

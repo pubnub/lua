@@ -5,6 +5,12 @@
 
 module(..., package.seeall)
 
+function table.in_table(tbl, item)
+    for key, value in pairs(tbl) do
+        if value == item then return key end
+    end
+    return false
+end
 
 function table.val_to_str ( v )
   if "string" == type( v ) then
