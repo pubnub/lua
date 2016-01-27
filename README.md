@@ -1,6 +1,6 @@
 # Please direct all Support Questions and Concerns to Support@PubNub.com
 
-## PubNub 3.4 Real-time Cloud Push API - for Corona and Moai
+## PubNub 3.5 Real-time Cloud Push API - for Corona and Moai
 ## www.pubnub.com - PubNub Real-time Push Service in the Cloud. 
 
 ###GET YOUR PUBNUB KEYS HERE:

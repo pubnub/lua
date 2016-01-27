@@ -1,4 +1,4 @@
--- Version: 3.4.3
+-- Version: 3.5.0
 -- www.pubnub.com - PubNub realtime push service in the cloud.
 -- https://github.com/pubnub/lua lua-Corona Push API
 
@@ -7,7 +7,7 @@
 -- http://www.pubnub.com/
 
 -- -----------------------------------
--- PubNub 3.4.3 Real-time Push Cloud API
+-- PubNub 3.5.0 Real-time Push Cloud API
 -- -----------------------------------
 
 require "crypto"
@@ -46,7 +46,7 @@ function pubnub.base(init)
 
     if not init then init = {} end
 
-    init.pnsdk          = 'PubNub-Lua-Corona/3.4.3'
+    init.pnsdk          = 'PubNub-Lua-Corona/3.5.0'
 
     local self          = init
     local CHANNELS      = {}
@@ -630,7 +630,7 @@ function pubnub.new(init)
             if request_id then network.cancel(request_id) end
         end
 
-        params["V"] = "3.4.3"
+        params["V"] = "3.5.0"
         params["User-Agent"] = "Corona"
         params.timeout = args.timeout
 
