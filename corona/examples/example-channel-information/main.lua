@@ -21,27 +21,31 @@ me.name = "John Smith"
 --
 -- Generate Player ID
 --
-multiplayer:time({
-    callback = function(time)
+
+
+
+
+multiplayer:time(
+    function(time)
         me.id = time .. '-' .. math.random( 1, 999999 )
     end
-})
+) 
 
 -- 
 -- Players Per Channel
 -- 
-players_per_game_room = {
+players_per_game_room= {
     game_room_1234 = {},
     game_room_5678 = {}
 }
 
-game_room_1234 = "game_room_1234"
+-- game_room_1234 = "game_room_1234"
 
 -- 
 -- Join Game Room 1234
 -- 
 multiplayer:subscribe({
-    channel  = game_room_1234,
+    channel  = "game_room_1234",
     callback = function(message)
 
         -- 
@@ -63,7 +67,13 @@ multiplayer:subscribe({
         -- Collect Live Players who are in this Game Room.
         -- 
         elseif message.action == "pong" then
-            players_per_game_room[game_room_1234][message.id] = message
+            
+            if players_per_game_room.game_room_1234 ~= nil then 
+                players_per_game_room[game_room_1234] = {}
+            end
+
+            print(message.id);
+            players_per_game_room.game_room_1234[message.id] = message
 
         -- 
         -- Some Other Game Event
@@ -79,7 +89,7 @@ multiplayer:subscribe({
 -- Request Info About Connected Players
 -- 
 multiplayer:publish({
-    channel = game_room_1234,
+    channel = "game_room_1234",
     message = { action = "ping" }
 })
 
@@ -90,13 +100,13 @@ function wait_for_info_from_players()
     --
     -- Print Number of Players
     --
-    print("Number of Players in channel: " .. game_room_1234)
-    print(#players_per_game_room[game_room_1234])
+    print("Number of Players in channel: " .. "game_room_1234")
+    print(#players_per_game_room.game_room_1234)
 
     --
     -- Print Info about Each Player
     --
-    for player_id, player in pairs(players_per_game_room[game_room_1234]) do
+    for player_id, player in pairs(players_per_game_room.game_room_1234) do
         print("Player: " .. player_id .. "'s Name is " .. player.name)
     end
 end
