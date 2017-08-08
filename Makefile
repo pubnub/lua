@@ -1,4 +1,4 @@
-SUBDIRS = corona moai
+SUBDIRS = corona moai pure
 
 .PHONY: all
 all:
