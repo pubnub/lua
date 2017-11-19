@@ -62,33 +62,10 @@ multiplayer:unsubscribe({
 })
 ```
 
-### History (Deprecated, use detailedHistory)
-```lua
-multiplayer:history({
-    channel  = "lua-corona-demo-channel",
-    limit    = 10,
-    callback = function(messages)
-        if not messages then
-            return print("ERROR LOADING HISTORY")
-        end
-
-        -- NO HISTORY?
-        if not (#messages > 0) then
-            return print("NO HISTORY YET")
-        end
-
-        -- LOOP THROUGH MESSAGE HISTORY
-        for i, message in ipairs(messages) do
-            print(Json.Encode(message))
-        end
-    end
-})
-```
-
 ### Detailed History
 ```lua
 function detailedHistory(channel, count, reverse)
-    pubnub_obj:detailedHistory({
+    pubnub_obj:history({
         channel = channel,
         count = count,
         reverse = reverse,
