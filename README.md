@@ -96,7 +96,7 @@ end)
 
 ### UUID
 ```lua
-uuid = pubnub_obj:UUID()
+uuid = pubnub_obj.uuid
 print("PUBNUB UUID: ", uuid)
 ```
 
