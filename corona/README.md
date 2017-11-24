@@ -103,7 +103,7 @@ end)
 
 ### UUID
 ```lua
-uuid = multiplayer:UUID()
+uuid = multiplayer.uuid
 print("PUBNUB UUID: ", uuid)
 ```
 
