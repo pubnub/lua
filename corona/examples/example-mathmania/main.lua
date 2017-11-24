@@ -61,8 +61,8 @@ my_player_id = crypto.digest( crypto.md4, system.getInfo("deviceID"))
 
 -- get the time
 function check_server_time()
-    multiplayer:time({
-    callback = function(time)
+    multiplayer:time(
+    function(time)
         -- get the time to the nearest second
         server_time = time * 0.0000001
         -- first time? synchronize game clock counter and say hello
@@ -73,20 +73,20 @@ function check_server_time()
             point_value_text.text = "Waiting for next round..."
         end
     end
-    })
+    )
 end
 
 
 -- resync with server
 function resync_server_time()
-    multiplayer:time({
-    callback = function(time)
+    multiplayer:time(
+    function(time)
         -- get the time to the nearest second
         server_time = time * 0.0000001
         print ( "(pubnub) received time" )
         game_clock = math.floor(server_time % 25 + 1)
     end
-    })
+    )
 end
     
 -- start push notification for pubnub
@@ -474,7 +474,8 @@ function show_leaderboard()
         temp_name = string.sub( temp_leaderboard[i], string.find ( temp_leaderboard[i], "|" ) + 1 )
         leaderboard[i].text = i .. ". " .. temp_score .. " " .. temp_name
     end
-    leaderboard[i]:setReferencePoint(display.CenterLeftReferencePoint)
+    leaderboard[i].anchorX = 0
+    leaderboard[i].anchorY = 0.5
     leaderboard[i].x = 40
     end
 end
@@ -510,7 +511,8 @@ leaderboard_group = display.newGroup()
 for i=1, 10 do
     leaderboard[i] = display.newText ( i .. ". " .. "(empty)", 0, 0, "Helvetica-Bold", 12)
     leaderboard[i].y = 60 + (i*18)
-    leaderboard[i]:setReferencePoint(display.CenterLeftReferencePoint)
+    leaderobard[i].anchorX = 0
+    leaderboard[i].anchorY = 0.5
     leaderboard[i].x = 40
     leaderboard_group:insert(leaderboard[i])
 end
