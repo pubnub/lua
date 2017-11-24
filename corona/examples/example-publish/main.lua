@@ -30,7 +30,7 @@ function publish(channel, text)
     pubnub_obj:publish({
         channel = channel,
         message = text,
-        callback = function(r) --textout(r) 
+        callback = function(r) textout("Publish response: " .. table.tostring(r)) 
         end,
         error = function(r) textout(r) 
         end
@@ -50,9 +50,9 @@ publish("abcd", 'Hello World!' )
 --
 -- Publish Dictionary Object
 --
-publish("efgh", { Name = 'John', Age = '25' })
+timer.performWithDelay(2000, function() publish("efgh", { Name = 'John', Age = '25' }) end)
 
 --
 -- Publish Array
 --
-publish("ijkl", { 'Sunday', 'Monday', 'Tuesday' })
+timer.performWithDelay(4000, function() publish("ijkl", { 'Sunday', 'Monday', 'Tuesday' }) end)
