@@ -135,26 +135,21 @@ local my_channel = 'hello-corona-demo-channel'
 here_now( my_channel )
 ```
 
-### Presence
+### Presence/where-now
 ```lua
-function presence( channel, donecb )
-    pubnub_obj:presence({
+function presence( channel)
+    pubnub_obj:where_how({
         channel = channel,
-        connect = function()
-            textout('Connected to channel ')
-            textout(channel)
-        end,
         callback = function(message)
-            for i,v in pairs(message) do textout(i .. " " .. v) end
-            timer.performWithDelay( 500, donecb )
+            for i,v in pairs(message.payload.channels) do textout(i .. " " .. v) end
         end,
-        errorback = function()
+        error = function()
             textout("Oh no!!! Dropped 3G Conection!")
         end
     })
 end
 
 local my_channel = 'hello_world'
-presence(my_channel, function() end)
+presence(my_channel)
 
 ```
