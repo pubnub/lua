@@ -22,7 +22,8 @@ local textout = PubnubUtil.textout
 -- 
 -- STARTING WELCOME MESSAGE FOR THIS EXAMPLE
 -- 
-textout("...")
+PubnubUtil.set_starty(display.contentHeight * 0.05)
+textout("Type your message in the box. Messages on the channel '"..CHAT_CHANNEL.."' will appear below")
 textout(" ")
 
 -- 
@@ -34,7 +35,8 @@ display.setStatusBar( display.HiddenStatusBar )
 -- 
 -- CREATE CHATBOX TEXT INPUT FIELD
 -- 
-chatbox = native.newTextField( 10, 10, display.contentWidth - 20, 36, function(event)
+chatbox = native.newTextField( 10, 10, display.contentWidth - 20, 40)
+chatbox:addEventListener('userInput', function(event)
     -- Only send when the user is ready.
     if not (event.phase == "ended" or event.phase == "submitted") then
         return
@@ -48,6 +50,9 @@ chatbox = native.newTextField( 10, 10, display.contentWidth - 20, 36, function(e
     native.setKeyboardFocus(nil)
 end )
 
+chatbox.anchorX = 0
+chatbox.anchorY = 0
+
 
 --
 -- A FUNCTION THAT WILL OPEN NETWORK A CONNECTION TO PUBNUB
@@ -57,9 +62,15 @@ function connect()
         channel  = CHAT_CHANNEL,
         connect  = function()
             textout('Connected!')
+			native.setKeyboardFocus(chatbox)
         end,
         callback = function(message)
-            textout(message.msgtext)
+		    if message.msgtext then
+				textout(message.msgtext)
+			else
+				textout(message)
+			end
+			native.setKeyboardFocus(chatbox)
         end,
         error = function(message)
             textout(message or "Connection Error")
