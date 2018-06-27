@@ -48,13 +48,17 @@ function table.tostring( tbl )
   return "{" .. table.concat( result, "," ) .. "}"
 end
 
-
 local fontSize = display.contentWidth/25
 local tempTxt = display.newText("Ty", 0, 0, nil, fontSize)
 local starty = 0
 local spacing = tempTxt.height * 0.25
 tempTxt:removeSelf()
 local currenty = starty
+
+function set_starty(newy)
+	starty = newy
+	currenty = starty
+end
 
 function textout(text)
 
@@ -72,14 +76,14 @@ function textout(text)
             display.contentWidth,
             display.contentHeight
         )
-        background:setFillColor(0.9, 0.9, 0.9)
+        background:setFillColor(0.9, 0.9, 0.8)
     end
 
     local myText = display.newText( text, 0, currenty, display.contentWidth, 0, nil, fontSize )
 
     myText:setTextColor(0.3, 0.3, 0.6)
-	myText.anchorX = 0
-	myText.anchorY = 0
-	currenty = currenty + myText.height + spacing
+    myText.anchorX = 0
+    myText.anchorY = 0
+    currenty = currenty + myText.height + spacing
 
 end

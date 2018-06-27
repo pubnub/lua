@@ -511,7 +511,7 @@ leaderboard_group = display.newGroup()
 for i=1, 10 do
     leaderboard[i] = display.newText ( i .. ". " .. "(empty)", 0, 0, "Helvetica-Bold", 12)
     leaderboard[i].y = 60 + (i*18)
-    leaderobard[i].anchorX = 0
+    leaderboard[i].anchorX = 0
     leaderboard[i].anchorY = 0.5
     leaderboard[i].x = 40
     leaderboard_group:insert(leaderboard[i])
