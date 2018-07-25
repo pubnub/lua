@@ -25,6 +25,6 @@ display.setStatusBar( display.HiddenStatusBar )
 -- 
 -- MAIN TEST
 -- 
-local uuid = pubnub_obj:UUID()
+local uuid = pubnub_obj.uuid
 textout("UUID")
 textout(uuid)

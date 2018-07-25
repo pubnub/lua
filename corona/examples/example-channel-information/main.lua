@@ -21,11 +21,11 @@ me.name = "John Smith"
 --
 -- Generate Player ID
 --
-multiplayer:time({
-    callback = function(time)
+multiplayer:time(
+    function(time)
         me.id = time .. '-' .. math.random( 1, 999999 )
     end
-})
+)
 
 -- 
 -- Players Per Channel
@@ -87,22 +87,19 @@ multiplayer:publish({
 -- Print info on Game Room 1234
 -- 
 function wait_for_info_from_players()
-    --
-    -- Print Number of Players
-    --
-    print("Number of Players in channel: " .. game_room_1234)
-    print(#players_per_game_room[game_room_1234])
+    local count = 0
+    print("Players in channel '" .. game_room_1234 .. "':")
 
-    --
-    -- Print Info about Each Player
-    --
     for player_id, player in pairs(players_per_game_room[game_room_1234]) do
+	    count = count + 1
         print("Player: " .. player_id .. "'s Name is " .. player.name)
     end
+
+    print("Number of Players in channel '" .. game_room_1234 .. "': " .. count)
 end
 
 -- 
--- Wait at 1 to 3 seconds for player response
+-- Wait a few seconds for player response
 -- before we assume we've received messages from everyone.
 -- 
-timer.performWithDelay( 2000, wait_for_info_from_players )
+timer.performWithDelay( 4000, wait_for_info_from_players )

@@ -82,6 +82,7 @@ transition.from ( onswitch, { delay = 2000, time = 1000, xScale = 0.05, yScale =
 function button_handler ( event )
     if event.phase == "press" then
         i = event.id
+		
         audio.play ( soundeffect[i] )
         if sendevents then send_pad (i) end
     end
@@ -90,7 +91,10 @@ end
 
 -- load sound effects
 for i = 1, #soundlabel do
-    soundeffect[i] = audio.loadSound ( soundlabel[i] .. ".caf" );
+	-- CAF files are smaller but not portable, work only on MacOS and iOS.
+	-- WAV files are larger, but work everywhere. We have both.
+	-- Season to taste! :)
+    soundeffect[i] = audio.loadSound ( soundlabel[i] .. ".wav", system.ResourceDirectory)
 end
 
 
@@ -124,8 +128,8 @@ end
 
 
 -- get the server time
-multiplayer:time({
-    callback = function(time)
+multiplayer:time(
+    function(time)
         -- get the time to the nearest second
         servertime = time
         if servertime ~= nil then
@@ -136,14 +140,15 @@ multiplayer:time({
             send_hello()
         end
     end
-})
+)
 
 
 -- listen for pad events
 function start_listening()
     multiplayer:subscribe ({
-        channel = session,
+        channel = tostring(session),
         callback = function ( message )
+		    print("received "..(message.action))
             if message.action and message.id then 
                 -- don't listen to my own messages
                 if message.id ~= my_id then

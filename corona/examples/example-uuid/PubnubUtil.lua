@@ -62,16 +62,17 @@ function textout(text)
     if textoutline > 24 then textoutline = 1 end
     if textoutline == 1 then
         local background = display.newRect(
-            0, 0,
+            display.contentWidth/2,
+            display.contentHeight/2,
             display.contentWidth,
             display.contentHeight
         )
-        background:setFillColor(254,254,254)
+        background:setFillColor(0.9, 0.9, 0.9)
     end
 
     local myText = display.newText( text, 0, 0, nil, display.contentWidth/25 )
 
-    myText:setTextColor(200,200,180)
+    myText:setTextColor(0.3, 0.3, 0.6)
     myText.x = math.floor(display.contentWidth/2)
     myText.y = (display.contentWidth/19) * textoutline - 5
 
