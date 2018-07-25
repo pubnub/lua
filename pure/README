@@ -1,0 +1,13 @@
+## ------------------------------------------------------
+## PubNub 3.1 Real-time Cloud Push API - Pure lua
+## ------------------------------------------------------
+##
+## www.pubnub.com - PubNub Real-time Push Service in the Cloud. 
+##
+## PubNub is a Massively Scalable Real-time Service for Web and Mobile Games.
+## This is a cloud-based service for broadcasting Real-time messages
+## to thousands of web and mobile clients simultaneously.
+
+This module does not uses any external frameworks and can be used in love2d game engine or standalone lua
+
+## Usage examples are provided in "main.lua"
