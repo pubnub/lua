@@ -323,7 +323,7 @@ function pubnub.base(init)
                 change_origin()
 
                 -- Re-test Connection
-                self:set_timeout( SECOND, function()
+                self:set_timeout( 10*SECOND, function()
                     self:time(_test_connection);
                 end);
             end
