@@ -30,6 +30,6 @@ clean:
 
 .PHONY: test
 test:
-	pass
+#	pass
 
 include ../Makefile.post

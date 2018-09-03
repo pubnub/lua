@@ -324,7 +324,7 @@ function pubnub.base(init)
                 change_origin()
 
                 -- Re-test Connection
-                self:set_timeout( SECOND, function()
+                self:set_timeout( 10*SECOND, function()
                     self:time(_test_connection);
                 end);
             end
@@ -358,7 +358,6 @@ function pubnub.base(init)
         local function _poll_online()
             if stop_keepalive then return end
             self:time(function(success)
-                if not success then  _test_connection() end
                 self:set_timeout( KEEPALIVE, function() _poll_online() end)
             end)
         end
