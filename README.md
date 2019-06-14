@@ -3,8 +3,7 @@
 ## PubNub 3.5 Real-time Cloud Push API - for Corona and Moai
 ## www.pubnub.com - PubNub Real-time Push Service in the Cloud. 
 
-###GET YOUR PUBNUB KEYS HERE:
-###http://www.pubnub.com/account#api-keys
+### [GET YOUR PUBNUB KEYS HERE](http://www.pubnub.com/account#api-keys)
 
 PubNub is a Massively Scalable Real-time Service for Web and Mobile Games.
 This is a cloud-based service for broadcasting Real-time messages
@@ -30,13 +29,12 @@ local pubnub_obj = pubnub.new({
 ### Publish
 ```lua
 pubnub_obj:publish({
-        channel = channel,
-        message = text,
-        callback = function(r) --textout(r)
-        end,
-        error = function(r) textout(r)
-        end
-    })
+    channel = channel,
+    message = text,
+    callback = function(r) --textout(r)
+    end,
+    error = function(r) textout(r)
+    end
 })
 ```
 
@@ -60,10 +58,10 @@ pubnub_obj:publish({
 
 ### Unsubscribe
 ```lua
-    multiplayer:unsubscribe({
-        channel = channel,
-    })
-    textout( 'Disconnected from ' .. channel )
+multiplayer:unsubscribe({
+    channel = channel,
+})
+textout( 'Disconnected from ' .. channel )
 ```
 
 ### Detailed History
