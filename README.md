@@ -40,20 +40,20 @@ pubnub_obj:publish({
 
 ### Subscribe
 ```lua
-    pubnub_obj:subscribe({
-        channel = channel,
-        connect = function()
-            textout('Connected to channel ')
-            textout(channel)
-        end,
-        callback = function(message)
-            --print(message.data.message)
-            textout(message)
-        end,
-        error = function()
-            textout("Oh no!!! Dropped 3G Conection!")
-        end,
-    })
+pubnub_obj:subscribe({
+    channel = channel,
+    connect = function()
+        textout('Connected to channel ')
+        textout(channel)
+    end,
+    callback = function(message)
+        --print(message.data.message)
+        textout(message)
+    end,
+    error = function()
+        textout("Oh no!!! Dropped 3G Conection!")
+    end,
+})
 ```
 
 ### Unsubscribe
