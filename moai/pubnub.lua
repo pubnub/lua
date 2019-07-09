@@ -1,4 +1,4 @@
--- Version: 3.5.0
+-- Version: 3.5.1
 -- www.pubnub.com - PubNub realtime push service in the cloud.
 -- https://github.com/pubnub/lua lua-Corona Push API
 
@@ -7,7 +7,7 @@
 -- http://www.pubnub.com/
 
 -- -----------------------------------
--- PubNub 3.5.0 Real-time Push Cloud API
+-- PubNub 3.5.1 Real-time Push Cloud API
 -- -----------------------------------
 
 require "crypto"
@@ -46,7 +46,7 @@ function pubnub.base(init)
 
     if not init then init = {} end
 
-    init.pnsdk          = 'PubNub-Lua-Moai/3.5.0'
+    init.pnsdk          = 'PubNub-Lua-Moai/3.5.1'
 
     local self          = init
     local CHANNELS      = {}
@@ -572,24 +572,24 @@ function pubnub.base(init)
 
     function self:message_counts(args)
         local channels = args.channels
-	local ctt = args.channelTimeTokens
+        local ctt = args.channelTimeTokens
         if not (args.callback and channels and ctt) then
             return print("Missing Message Counts Callback and/or Channels and/or Channel Time Tokens")
         end
-	if #channels == 0 then
+        if #channels == 0 then
             return print("Channels cannot be empty")
-	end
-	if #ctt ~= 1 and #ctt ~= #channels then
-	    return print("Channels and channel time tokens must have same number of elements")
+        end
+        if #ctt ~= 1 and #ctt ~= #channels then
+            return print("Channels and channel time tokens must have same number of elements")
 	end
 
         query = {}
         query.auth = self.auth_key
-	if #ctt == 1 then
-	    query.timetoken = ctt[1]
-	else
-	    query.channelsTimetoken = table.concat(ctt, ",")
-	end
+        if #ctt == 1 then
+            query.timetoken = ctt[1]
+        else
+            query.channelsTimetoken = table.concat(ctt, ",")
+        end
         local callback = args.callback
         local error_cb = args.error or function() end
 
@@ -672,7 +672,7 @@ function pubnub.new( init )
     	end
 
 		task:setUrl(args.url)
-		task:setHeader 			( "V", "3.5.0" )
+		task:setHeader 			( "V", "3.5.1" )
 		if args.timeout then
 			task:setTimeout     	(args.timeout)
 		end
