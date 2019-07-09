@@ -106,10 +106,8 @@ local ret = ""
 local i = 0
 
 
-	for i in string.gfind(s, ".") do
-		i = string.lower(i)
-
-		ret = ret..hex2bin[i]
+	for i = 1,string.len(s),1 do
+		ret = ret..hex2bin[s:sub(i, i)]
 
 	end
 

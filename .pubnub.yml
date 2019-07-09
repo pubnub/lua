@@ -1,0 +1,42 @@
+name: lua
+version: 3.5.1
+scm: github.com/pubnub/c-core
+changelog:
+  - version: v3.5.1
+    date: Jun 29, 2019
+    changes:
+      - type: enhancement
+        text: Introduce Message Counts API
+features:
+  presence:
+    - PRESENCE-HERE-NOW
+    - PRESENCE-WHERE-NOW
+  publish:
+    - PUBLISH-RAW-JSON
+    - PUBLISH-GET
+    - PUBLISH-SYNC
+    - PUBLISH-ASYNC
+  storage:
+    - STORAGE-COUNT
+    - STORAGE-REVERSE
+    - STORAGE-START-END
+    - STORAGE-MESSAGE-COUNT
+  time:
+    - TIME-TIME
+  subscribe:
+    - SUBSCRIBE-CHANNELS
+    - SUBSCRIBE-PRESENCE-CHANNELS
+    - SUBSCRIBE-WILDCARD
+supported-platforms:
+  - 
+    version: Moai
+    platforms:
+      - Any supported by Moai Game Development Engine
+  - 
+    version: Corona
+    platforms:
+      - Any supported by The 2D Game Engine Corona
+  - 
+    version: Pure/plain Lua
+    platforms:
+      - Any supporting the de-facto standard lua-sockets library (most modern Unices and Windows)
