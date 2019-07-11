@@ -1,6 +1,6 @@
 name: lua
 version: 3.5.1
-scm: github.com/pubnub/c-core
+scm: github.com/pubnub/lua
 changelog:
   - version: v3.5.1
     date: Jun 29, 2019
