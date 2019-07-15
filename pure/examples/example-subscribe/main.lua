@@ -31,11 +31,11 @@ local json = require("dkjson")
 -- http://www.pubnub.com/account#api-keys
 --
 pn = pubnub.new ( {
-	publish_key   = "pub-c-292dc0ad-b309-40d5-9852-edeaa01229d8",             -- YOUR PUBLISH KEY
-	subscribe_key = "sub-c-1d80379a-7c5d-11e7-8bd1-0619f8945a4f",             -- YOUR SUBSCRIBE KEY
+    	publish_key   = "demo",
+	subscribe_key = "demo",
 	secret_key    = nil,                -- YOUR SECRET KEY
-	auth_key      = "abcd",
-	ssl           = true,                -- ENABLE SSL?
+	auth_key      = "",
+	ssl           = false,
 	origin        = "pubsub.pubnub.com" -- PUBNUB CLOUD ORIGIN
 } )
 
@@ -43,7 +43,7 @@ pn = pubnub.new ( {
 -- PUBNUB PUBLISH MESSAGE (SEND A MESSAGE)
 --
 pn:publish ( {
-	channel  = "lua-1",
+	channel  = "hello_world",
 	message  = { time=os.date("%X")},
 	callback = function ( info )
 
@@ -61,7 +61,7 @@ pn:publish ( {
 -- PUBNUB SUBSCRIBE CHANNEL (RECEIVE MESSAGES)
 --
 pn:subscribe ( {
-	channel  = "lua-1",
+	channel  = "hello_world",
 	callback = function ( message , ch)
 		-- MESSAGE RECEIVED!!!
 		print ( ch .. " : " .. ( json.encode(message) ) )
@@ -82,7 +82,7 @@ pn:subscribe ( {
 		print ( "error" )
 	end,
 	presence = function(message, ch) 
-		print ( ch .. " : " .. ( message ) )
+		print( "presence - " .. ch .. " : " .. ( json.encode(message) or message ) )
 	end
 
 } )
@@ -138,12 +138,25 @@ end
 --
 -- PUBNUB SERVER TIME
 --
---pn:time ( {
---    callback = function ( time )
---        -- PRINT TIME
---        print ( "PUBNUB SERVER TIME: " .. time )
---    end
---} )
+pn:time ( function ( time )
+        -- PRINT TIME
+        print ( "PUBNUB SERVER TIME: " .. time )
+    end
+)
+
+--
+-- Message Counts
+--
+pn:message_counts({
+      channels = { "hello_world", "test", "Zuvoin"},
+      channelTimeTokens = { 5},
+      callback = function(response)
+	 print(json.encode(response))
+      end,
+      error = function(response)
+	 print("error:" .. json.encode(response))
+      end
+})
 
 --
 -- PUBNUB UUID

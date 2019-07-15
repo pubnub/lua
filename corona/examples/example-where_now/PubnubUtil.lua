@@ -50,11 +50,7 @@ end
 
 
 
-local tempTxt = display.newText("Ty", 0, 0, nil, display.contentWidth/25)
-local starty = tempTxt.height * 0.75
-tempTxt:removeSelf()
-local currenty = starty
-
+local textoutline = 1
 function textout(text)
 
     if type(text) == "table" then
@@ -63,21 +59,22 @@ function textout(text)
 
     print(text)
 
-    if currenty > display.contentHeight * 0.8 then currenty = starty end
-    if currenty == starty then
+    if textoutline > 24 then textoutline = 1 end
+    if textoutline == 1 then
         local background = display.newRect(
-            display.contentWidth/2,
-            display.contentHeight/2,
+            0, 0,
             display.contentWidth,
             display.contentHeight
         )
-        background:setFillColor(0.9, 0.9, 0.9)
+        background:setFillColor(254,254,254)
     end
 
-    local myText = display.newText( text, display.contentWidth/2, 0, display.contentWidth, 0, nil, display.contentWidth/25 )
+    local myText = display.newText( text, 0, 0, nil, display.contentWidth/25 )
 
-    myText:setTextColor(0.3, 0.3, 0.6)
-    myText.y = currenty
-	currenty = currenty + myText.height + starty
+    myText:setTextColor(200,200,180)
+    myText.x = math.floor(display.contentWidth/2)
+    myText.y = (display.contentWidth/19) * textoutline - 5
+
+    textoutline = textoutline + 1
 
 end

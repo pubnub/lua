@@ -7,7 +7,7 @@
 -- http://www.pubnub.com/
 
 -- -----------------------------------
--- PubNub 3.5.0 Real-time Push Cloud API
+-- PubNub 3.5.1 Real-time Push Cloud API
 -- -----------------------------------
 
 require "crypto"
@@ -46,7 +46,7 @@ function pubnub.base(init)
 
     if not init then init = {} end
 
-    init.pnsdk          = 'PubNub-Lua-Pure/3.5.0'
+    init.pnsdk          = 'PubNub-Lua-Pure/3.5.1'
 
     local self          = init
     local CHANNELS      = {}
@@ -570,6 +570,43 @@ function pubnub.base(init)
         })
     end
 
+    function self:message_counts(args)
+        local channels = args.channels
+        local ctt = args.channelTimeTokens
+        if not (args.callback and channels and ctt) then
+            return print("Missing Message Counts Callback and/or Channels and/or Channel Time Tokens")
+        end
+        if #channels == 0 then
+            return print("Channels cannot be empty")
+        end
+        if #ctt ~= 1 and #ctt ~= #channels then
+            return print("Channels and channel time tokens must have same number of elements")
+	end
+
+        query = {}
+        query.auth = self.auth_key
+        if #ctt == 1 then
+            query.timetoken = ctt[1]
+        else
+            query.channelsTimetoken = table.concat(ctt, ",")
+        end
+        local callback = args.callback
+        local error_cb = args.error or function() end
+
+        self:_request({
+            callback = callback,
+            fail     = error_cb,
+            url  = build_url({
+                'v3',
+                'history',
+                'sub-key',
+                self.subscribe_key,
+                'message-counts',
+                _encode(table.concat(channels, ","))
+            }, query );
+        })
+    end
+    
     function self:time(callback)
         if not callback then
             return print("Missing Time Callback")
@@ -630,7 +667,7 @@ function pubnub.new( init )
 			url = args.url,
 			sink = ltn12.sink.table(t),	    
 			headers = {
-				V = "3.5.0",
+				V = "3.5.1",
 				['User-Agent'] = "Pure"
 			},
 			redirect = true
