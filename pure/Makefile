@@ -19,7 +19,10 @@ $(PUBNUB_LUA): $(PUBNUB_COMMON_LUA) $(PUBNUB_NODE_LUA)
 	find examples -depth -name "example-*" -exec cp dkjson.lua {} \;
 	find examples -depth -name "example-*" -exec cp ../common/BinDecHex.lua {} \;
 	find examples -depth -name "example-*" -exec cp ../common/PubnubUtil.lua {} \;
-
+	cp ../common/PubnubUtil.lua test/
+	cp ../common/BinDecHex.lua test/
+	cp dkjson.lua test/
+	cp pubnub.lua test/
 .PHONY: clean
 clean:
 	rm -f $(OUTPUT_FILES) 

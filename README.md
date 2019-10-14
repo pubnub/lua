@@ -1,6 +1,6 @@
 # Please direct all Support Questions and Concerns to Support@PubNub.com
 
-## PubNub 3.5 Real-time Cloud Push API - for Corona and Moai
+## PubNub 3.6 Real-time Cloud Push API - for Corona and Moai
 ## www.pubnub.com - PubNub Real-time Push Service in the Cloud. 
 
 ### [GET YOUR PUBNUB KEYS HERE](http://www.pubnub.com/account#api-keys)
@@ -35,6 +35,19 @@ pubnub_obj:publish({
     end,
     error = function(r) textout(r)
     end
+})
+```
+
+### Signal
+```lua
+pubnub_obj:signal({
+        channel = channel,
+        message = text,
+        callback = function(r) --textout(r)
+        end,
+        error = function(r) textout(r)
+        end
+    })
 })
 ```
 

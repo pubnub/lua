@@ -31,11 +31,11 @@ local json = require("dkjson")
 -- http://www.pubnub.com/account#api-keys
 --
 pn = pubnub.new ( {
-    	publish_key   = "demo",
-	subscribe_key = "demo",
+	publish_key   = "demo",             -- YOUR PUBLISH KEY
+	subscribe_key = "demo",             -- YOUR SUBSCRIBE KEY
 	secret_key    = nil,                -- YOUR SECRET KEY
-	auth_key      = "",
-	ssl           = false,
+	auth_key      = "abcd",
+	ssl           = true,                -- ENABLE SSL?
 	origin        = "pubsub.pubnub.com" -- PUBNUB CLOUD ORIGIN
 } )
 
@@ -86,6 +86,7 @@ pn:subscribe ( {
 	end
 
 } )
+
 
 --[[
 pn:subscribe ( {
