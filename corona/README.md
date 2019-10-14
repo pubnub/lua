@@ -41,6 +41,20 @@ multiplayer:publish({
 })
 ```
 
+### Signal
+```lua
+pubnub_obj:signal({
+        channel = channel,
+        message = text,
+        callback = function(r) --textout(r)
+        end,
+        error = function(r) textout(r)
+        end
+    })
+})
+```
+
+
 ### Subscribe
 ```lua
 multiplayer:subscribe({

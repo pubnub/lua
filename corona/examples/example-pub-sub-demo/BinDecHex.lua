@@ -106,10 +106,9 @@ local ret = ""
 local i = 0
 
 
-	for i = 1,string.len(s),1 do
-		ret = ret..hex2bin[s:sub(i, i)]
-
-	end
+    for i = 1,string.len(s),1 do
+        ret = ret..hex2bin[string.lower(s:sub(i, i))]
+    end
 
 	return ret
 end

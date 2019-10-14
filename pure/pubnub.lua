@@ -7,7 +7,7 @@
 -- http://www.pubnub.com/
 
 -- -----------------------------------
--- PubNub 3.5.1 Real-time Push Cloud API
+-- PubNub 3.6.0 Real-time Push Cloud API
 -- -----------------------------------
 
 require "crypto"
@@ -46,7 +46,7 @@ function pubnub.base(init)
 
     if not init then init = {} end
 
-    init.pnsdk          = 'PubNub-Lua-Pure/3.5.1'
+    init.pnsdk          = 'PubNub-Lua-Pure/3.6.0'
 
     local self          = init
     local CHANNELS      = {}
@@ -56,7 +56,12 @@ function pubnub.base(init)
     local PRESENCE_SUFFIX = '-pnpres'
     local SUB_WINDOWING = 1
     local SUB_TIMEOUT   = 310
+    local MINIMAL_HEARTBEAT_INTERVAL = 270
+    local MESSAGE_TYPE_PUBLISHED = 0
+    local MESSAGE_TYPE_SIGNAL = 1
+    local MESSAGE_TYPE_ACTION = 3
     local TIMETOKEN     = 0
+    local REGION        = 0
     local KEEPALIVE     = 15
     local SECOND        = 1
     local methods       = {}
@@ -191,6 +196,18 @@ function pubnub.base(init)
         })
     end
 
+    function self:message_type_published()
+        return MESSAGE_TYPE_PUBLISHED
+    end
+
+    function self:message_type_signal()
+        return MESSAGE_TYPE_SIGNAL
+    end
+
+    function self:message_type_action()
+        return MESSAGE_TYPE_ACTION
+    end
+
     function self:publish(args)
         local callback = args.callback or function() end
         local error_cb    = args.error or function() end
@@ -231,6 +248,39 @@ function pubnub.base(init)
                 _encode(channel),
                 "0",
                 _encode(message)
+            }, { auth = self.auth_key, meta = args.meta })
+        })
+    end
+
+    function self:signal(args)
+        local callback = args.callback or function() end
+        local error_cb    = args.error or function() end
+
+        if not (args.channel and args.message) then
+            return callback({ nil, "Missing Channel and/or Message" })
+        end
+
+        local channel   = args.channel
+        local message   = self:json_encode(args.message)
+        local signature = "0"
+
+        -- SIGNAL MESSAGE
+        self:_request({
+            callback = function(response)
+                if not response then
+                    return error_cb({ nil, "Connection Lost" })
+                end
+                callback(response)
+            end,
+            fail = function(response) error_cb(response) end ,
+            url  = build_url({
+                "signal",
+                self.publish_key,
+                self.subscribe_key,
+                signature,
+                _encode(channel),
+                "0",
+                _encode(message)
             }, { auth = self.auth_key })
         })
     end
@@ -265,10 +315,14 @@ function pubnub.base(init)
         return generate_channel_list(CHANNELS)
     end
 
+    function self:get_timetoken()
+        return TIMETOKEN
+    end
+
     function self:subscribe(args)
         local channel       = args.channel
         local callback      = callback              or args.callback
-        local error_cb         = args['error']         or function() end
+        local error_cb      = args['error']         or function() end
         local connect       = args['connect']       or function() end
         local reconnect     = args['reconnect']     or function() end
         local disconnect    = args['disconnect']    or function() end
@@ -466,6 +520,202 @@ function pubnub.base(init)
         methods:CONNECT()
     end
 
+    function self:message_v2_type(message_v2)
+        return message_v2['e']
+    end
+
+    function self:is_message_v2_published(message_v2)
+        return self:message_v2_type(message_v2) == MESSAGE_TYPE_PUBLISHED
+    end
+
+    function self:is_message_v2_signal(message_v2)
+        return self:message_v2_type(message_v2) == MESSAGE_TYPE_SIGNAL
+    end
+
+    function self:is_message_v2_action(message_v2)
+        return self:message_v2_type(message_v2) == MESSAGE_TYPE_ACTION
+    end
+
+    function self:subscribe_v2(args)
+        local channel       = args.channel
+        local callback      = callback_v2           or args.callback
+        local error_cb      = args['error']         or function() end
+        local connect       = args['connect']       or function() end
+        local reconnect     = args['reconnect']     or function() end
+        local disconnect    = args['disconnect']    or function() end
+        local noheresync    = args['noheresync']    or false
+        local presence      = args['presence']      or false
+        local backfill      = args['backfill']      or false
+        local timetoken     = args['timetoken']     or 0
+        local timeout       = args['timeout']       or SUB_TIMEOUT
+        local windowing     = args['windowing']     or SUB_WINDOWING
+        local restore       = args['restore']       or false
+        local filter_expr   = args.filter_expr
+        local heart_beat    = args['heart_beat']    or MINIMAL_HEARTBEAT_INTERVAL
+
+        if not channel then return print("Missing Channel") end
+        if not callback then return print("Missing Callback") end
+        if not self.subscribe_key then return print("Missing Subscribe Key") end
+
+        SUB_RESTORE = restore
+        TIMETOKEN   = timetoken
+
+        each(string.split(channel, ','), function(ch)
+
+            local settings = CHANNELS[ch] or {}
+            SUB_CHANNEL = ch
+            CHANNELS[SUB_CHANNEL] = {
+                name            = ch ,
+                connected       = settings.connected or false ,
+                disconnected    = settings.disconnected or false ,
+                subscribed      = true ,
+                connect         = connect,
+                disconnect      = disconnect,
+                reconnect       = reconnect
+            }
+            if not presence then return end
+
+            self:subscribe({
+                channel = ch .. PRESENCE_SUFFIX,
+                callback = presence
+            })
+
+            if settings.subscribed then return end
+
+        end)
+                    -- Test Network Connection
+
+        local function _test_connection(success)
+
+            if success then
+                -- Begin Next Socket Connection
+                self:set_timeout( SECOND, function() methods:CONNECT_V2() end );
+
+            else
+                change_origin()
+
+                -- Re-test Connection
+                self:set_timeout( 10*SECOND, function()
+                    self:time(_test_connection);
+                end);
+            end
+
+            -- Disconnect & Reconnect
+            each_channel(function(channel)
+                -- Reconnect
+                if success and channel.disconnected then
+                    channel.disconnected = 0;
+                    return channel.reconnect(channel.name)
+                end
+
+                -- Disconnect
+                if not success and not channel.disconnected then
+                    channel.disconnected = 1
+                    channel.disconnect(channel.name)
+                end
+            end)
+        end
+
+        local function _reset_offline(err)
+            if SUB_RECEIVER then SUB_RECEIVER(err) end
+            SUB_RECEIVER = nil;
+        end
+
+
+        local function _poll_online()
+            if stop_keepalive then return end
+            self:time(function(success)
+                self:set_timeout( KEEPALIVE, function() _poll_online() end)
+            end)
+        end
+
+        local function start_poll_online()
+            if stop_keepalive then
+                stop_keepalive = false
+                _poll_online()
+            end
+        end
+
+
+
+        -- SUBSCRIPTION_V2 RECURSION
+        local function _connect()
+
+            local channels = table.concat(generate_channel_list(CHANNELS), ",")
+
+            if not channels or string.len(channels) == 0 then
+                stop_keepalive = true
+                return
+            end
+
+            _reset_offline()
+            start_poll_online()
+
+            -- CONNECT TO PUBNUB SUBSCRIBE_V2 SERVERS
+            SUB_RECEIVER = self:_request({
+                timeout = timeout,
+                url = build_url({
+                    "v2",
+                    "subscribe",
+                    self.subscribe_key,
+                    _encode(channels),
+                    "0"
+                    },
+                    { tt = tostring(TIMETOKEN),
+                      tr = tostring(REGION),
+                      auth = self.auth_key,
+                      ['filter-expr'] = filter_expr,
+                      heartbeat = tostring(heart_beat)}),
+                fail = function()
+                    SUB_RECEIVER = nil
+                    self:time(_test_connection)
+                end,
+                callback = function(response)
+                    SUB_RECEIVER = nil
+
+                    -- Check for errors
+                    if not response then
+                        error_cb()
+                        return self:set_timeout(windowing, _connect)
+                    end
+
+                    -- Restore previous Connection point
+                    TIMETOKEN = response['t']['t']
+                    REGION = response['t']['r']
+
+                    -- connect
+
+                    each_channel(function(channel)
+                        if channel.connected then return end;
+                        channel.connected = 1;
+                        channel.connect(channel.name);
+                    end);
+
+                    -- invoke memory catchup and invoke upto
+                    -- 100 previous messages from the Queue
+
+                    if backfill then
+                        TIMETOKEN = 10000
+                        backfill = 0
+                    end
+
+                    -- invoke callback
+                    callback(response);
+
+                    -- do recursive connect
+                    self:set_timeout(windowing, _connect)
+                end
+            })
+
+        end
+        function methods:CONNECT_V2()
+            _reset_offline()
+            _connect()
+        end
+        methods:CONNECT_V2()
+
+    end
+
     function self:where_now(args)
         if not (args.callback) then
             return print("Missing Where Now Callback")
@@ -606,7 +856,7 @@ function pubnub.base(init)
             }, query );
         })
     end
-    
+
     function self:time(callback)
         if not callback then
             return print("Missing Time Callback")
@@ -667,7 +917,7 @@ function pubnub.new( init )
 			url = args.url,
 			sink = ltn12.sink.table(t),	    
 			headers = {
-				V = "3.5.1",
+				V = "3.6.0",
 				['User-Agent'] = "Pure"
 			},
 			redirect = true

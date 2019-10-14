@@ -1,12 +1,31 @@
 name: lua
-version: 3.5.1
+version: 3.6.0
 scm: github.com/pubnub/lua
 changelog:
+  - version: v3.6.0
+    date: Oct 14, 2019
+    changes:
+      - type: enhancement
+        text: Introduce Signals API
+      - type: enhancement
+        text: Introduce Subscribe V2
   - version: v3.5.1
     date: Jun 29, 2019
     changes:
       - type: enhancement
         text: Introduce Message Counts API
+  - version: v3.5.0
+    date: Jan 27, 2016
+    changes:
+      - type: enhancement
+        text: Added Global Here Now API
+      - type: enhancement
+        text: Added Where Now API
+  - version: v3.4.2
+    date: Jan 28, 2015
+    changes:
+      - type: enhancement
+        text: Fix encoding issues.
 features:
   presence:
     - PRESENCE-HERE-NOW
@@ -28,15 +47,15 @@ features:
     - SUBSCRIBE-PRESENCE-CHANNELS
     - SUBSCRIBE-WILDCARD
 supported-platforms:
-  - 
+  -
     version: Moai
     platforms:
       - Any supported by Moai Game Development Engine
-  - 
+  -
     version: Corona
     platforms:
       - Any supported by The 2D Game Engine Corona
-  - 
+  -
     version: Pure/plain Lua
     platforms:
       - Any supporting the de-facto standard lua-sockets library (most modern Unices and Windows)
