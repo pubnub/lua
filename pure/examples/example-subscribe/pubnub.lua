@@ -763,7 +763,280 @@ function pubnub.base(init)
             fail = error_cb,
             url  = build_url(query, { auth = self.auth_key })
         })
+    end
 
+    function self:_get_objs_query(args)
+        local query = {}
+        if args.start then query["start"] = args.start end
+        if args.endt then  query["end"] = args.endt end
+        if args.limit then query["limit"] = args.limit end
+        if args.count then query["count"] = args.count end
+        if args.include then query["include"] = args.include end
+        query["uuid"] = args.uuid or self.uuid
+        query["auth"]= self.auth_key
+        return query
+    end
+
+    function self:_get_objects(which, args)
+        if not args.callback then
+            return print("Missing callback")
+        end
+        if (args.start and args.endt) then
+            return print("Cannot have both start and endt params for getting "..which)
+        end
+
+        self:_request({
+            callback = args.callback,
+            fail     = args.error or function() end,
+            url  = build_url({
+                'v1',
+                'objects',
+                self.subscribe_key,
+                which
+            }, self:_get_objs_query(args))
+        })
+    end
+
+    function self:_upd_obj_query(args)
+        local query = {}
+        if args.include then query["include"] = args.include end
+        query["uuid"] = args.uuid or self.uuid
+        query["auth"]= self.auth_key
+        return query
+    end
+
+    function self:_get_object(which, args)
+        if not args.callback then
+            return print("Missing callback")
+        end
+        local sing = which:sub(1, which:len()-1)
+        local obj_id = args[sing.."_id"] or args[sing].id
+        if not obj_id then
+            return print("Must provide "..sing.."_id or "..sing..".id to get object from "..which)
+        end
+        if args[sing.."_id"] and args[sing].id then
+            return print("Cannot provide both "..sing.."_id and "..sing..".id to get object from "..which)
+        end
+
+        self:_request({
+            callback = args.callback,
+            fail     = args.error or function() end,
+            url  = build_url({
+                'v1',
+                'objects',
+                self.subscribe_key,
+                which,
+                obj_id
+            }, self:_upd_obj_query(args) )
+        })
+    end
+
+    function self:_create_object(which, args)
+        if not args.callback then
+            return print("Missing callback")
+        end
+        local obj = args[which:sub(1, which:len()-1)]
+        if not obj then
+            return print("Must provide an object to create in "..which)
+        end
+
+        self:_request({
+            callback = args.callback,
+            fail     = args.error or function() end,
+            method   = "POST",
+            body     = obj,
+            url  = build_url({
+                'v1',
+                'objects',
+                self.subscribe_key,
+                which
+            }, self:_upd_obj_query(args) )
+        })
+    end
+
+    function self:_update_object(which, args)
+        if not args.callback then
+            return print("Missing callback")
+        end
+        local obj = args[which:sub(1, which:len()-1)]
+        if not obj then
+            return print("Must provide an object to update "..which)
+        end
+        if not obj.id then
+            return print("Object must have an id to be updated")
+        end
+
+        self:_request({
+            callback = args.callback,
+            fail     = args.error or function() end,
+            method   = "PATCH",
+            body     = obj,
+            url  = build_url({
+                'v1',
+                'objects',
+                self.subscribe_key,
+                which,
+                obj.id
+            }, self:_upd_obj_query(args) )
+        })
+    end
+
+    function self:_delete_object(which, args)
+        if not args.callback then
+            return print("Missing callback")
+        end
+        local singl = which:sub(1, which:len()-1)
+        local obj_id = args[singl.."_id"] or args[singl].id
+        if not obj_id then
+            return print("Must provide "..singl.."_id or "..singl..".id to delete object from "..which)
+        end
+        if args[singl.."_id"] and args[singl].id then
+            return print("Cannot provide both "..singl.."_id and "..singl..".id to delete object from "..which)
+        end
+
+        self:_request({
+            callback = args.callback,
+            fail     = args.error or function() end,
+            method   = "DELETE",
+            url  = build_url({
+                'v1',
+                'objects',
+                self.subscribe_key,
+                which,
+                obj_id
+            }, self:_upd_obj_query(args) )
+        })
+    end
+
+    function self:get_users(args)
+        return self:_get_objects("users", args)
+    end
+
+    function self:get_user(args)
+        return self:_get_object("users", args)
+    end
+
+    function self:create_user(args)
+        return self:_create_object("users", args)
+    end
+
+    function self:update_user(args)
+        return self:_update_object("users", args)
+    end
+
+    function self:delete_user(args)
+        return self:_delete_object("users", args)
+    end
+
+    function self:get_spaces(args)
+        return self:_get_objects("spaces", args)
+    end
+
+    function self:get_space(args)
+        return self:_get_object("space", args)
+    end
+
+    function self:create_space(args)
+        return self:_create_object("spaces", args)
+    end
+
+    function self:update_space(args)
+        return self:_update_object("spaces", args)
+    end
+
+    function self:delete_space(args)
+        return self:_delete_object("spaces", args)
+    end
+
+    function self:_update_obj_memberships(key, master, args)
+        if not args.callback then
+            return print("Missing callback")
+        end
+        if not args.update_obj then
+            return print("Need update_obj to "..key)
+        end
+        if not args[master.."_id"] then
+            return print("Need "..master.."_id to "..key)
+        end
+
+        local obj = { [key] = args.update_obj }
+        local error_cb = args.error or function() end
+        local others = master == "space" and "users" or "spaces"
+
+        self:_request({
+            callback = args.callback,
+            fail     = error_cb,
+            method   = "PATCH",
+            body     = obj,
+            url  = build_url({
+                'v1',
+                'objects',
+                self.subscribe_key,
+                master.."s",
+                args[master.."_id"],
+                others
+            }, self:_upd_obj_query(args) )
+        })
+    end
+
+    function self:_get_obj_memberships(master, args)
+        if not args.callback then
+            return print("Missing callback")
+        end
+        if (args.start and args.endt) then
+            return print("Cannot have both start and endt params for getting "..which)
+        end
+        if not args[master.."_id"] then
+            return print("Need "..master.."_id to get")
+        end
+
+        local error_cb = args.error or function() end
+        local others = master == "space" and "users" or "spaces"
+
+        self:_request({
+            callback = args.callback,
+            fail     = error_cb,
+            url  = build_url({
+                'v1',
+                'objects',
+                self.subscribe_key,
+                master.."s",
+                args[master.."_id"],
+                others
+            }, self:_get_objs_query(args))
+        })
+    end
+
+    function self:get_memberships(args)
+        return self:_get_obj_memberships("user", args)
+    end
+
+    function self:update_memberships(args)
+        return self:_update_obj_memberships("update", "user",  args)
+    end
+
+    function self:join_spaces(args)
+        return self:_update_obj_memberships("add", "user",  args)
+    end
+
+    function self:leave_spaces(args)
+        return self:_update_obj_memberships("leave", "user",  args)
+    end
+
+    function self:get_members(args)
+        return self:_get_obj_memberships("space", args)
+    end
+
+    function self:update_members(args)
+        return self:_update_obj_memberships("update", "space", args)
+    end
+
+    function self:add_members(args)
+        return self:_update_obj_memberships("add", "space", args)
+    end
+
+    function self:remove_members(args)
+        return self:_update_obj_memberships("remove", "space", args)
     end
 
     function self:history(args)
@@ -774,15 +1047,12 @@ function pubnub.base(init)
         query = {}
 
         if (args.start or args.stop or args.reverse) then
-
             if args.start then
                 query["start"] = args.start
             end
-
             if args.stop then
                 query["stop"] = args.stop
             end
-
             if args.reverse then
                 if (args.reverse == true or args.reverse == "true") then
                     query["reverse"] = "true"
@@ -816,7 +1086,7 @@ function pubnub.base(init)
                 self.subscribe_key,
                 'channel',
                 _encode(channel)
-            }, query );
+            }, query )
         })
     end
 
@@ -853,7 +1123,7 @@ function pubnub.base(init)
                 self.subscribe_key,
                 'message-counts',
                 _encode(table.concat(channels, ","))
-            }, query );
+            }, query )
         })
     end
 
@@ -912,17 +1182,24 @@ function pubnub.new( init )
 	end
 
 	function self:_request ( args )
-		local t = {}	    
-		local r, c = http.request {
+		local t = {}
+		local request = {
 			url = args.url,
-			sink = ltn12.sink.table(t),	    
+			method = args.method or "GET",
+			sink = ltn12.sink.table(t),
 			headers = {
 				V = "3.6.0",
 				['User-Agent'] = "Pure"
 			},
 			redirect = true
 		}
+		if args.body then
+			local body = json.encode(args.body)
+			request.headers["Content-Length"] = #body
+			request.source = ltn12.source.string(body)
+		end
 
+		local r, c = http.request(request)
 		if r==nil or c ~= 200 then return args.fail() end
 		message = self:json_decode(table.concat(t))
 
