@@ -5,26 +5,26 @@ changelog:
   - version: v3.6.0
     date: Oct 14, 2019
     changes:
-      - type: enhancement
+      - type: improvement
         text: Introduce Signals API
       - type: enhancement
         text: Introduce Subscribe V2
   - version: v3.5.1
     date: Jun 29, 2019
     changes:
-      - type: enhancement
+      - type: improvement
         text: Introduce Message Counts API
   - version: v3.5.0
     date: Jan 27, 2016
     changes:
-      - type: enhancement
+      - type: improvement
         text: Added Global Here Now API
       - type: enhancement
         text: Added Where Now API
   - version: v3.4.2
     date: Jan 28, 2015
     changes:
-      - type: enhancement
+      - type: improvement
         text: Fix encoding issues.
 features:
   presence:
